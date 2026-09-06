@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-facade-xml type="seed">
+    <moqui.security.ArtifactGroup artifactGroupId="CF_SVC_ADMIN" description="collie-flowable admin services"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_SVC_ADMIN" artifactTypeEnumId="AT_SERVICE"
+            nameIsPattern="N" inheritAuthz="N"
+            artifactName="wf.flowable.WorkflowServices.deploy#ProcessDefinition"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_SVC_ADMIN" artifactTypeEnumId="AT_SERVICE"
+            nameIsPattern="N" inheritAuthz="N"
+            artifactName="wf.flowable.WorkflowServices.save#ProcessDefinition"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_SVC_ADMIN" artifactTypeEnumId="AT_SERVICE"
+            nameIsPattern="N" inheritAuthz="N"
+            artifactName="wf.flowable.WorkflowServices.get#ProcessDefinition"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_SVC_ADMIN" artifactTypeEnumId="AT_SERVICE"
+            nameIsPattern="N" inheritAuthz="N"
+            artifactName="wf.flowable.WorkflowServices.list#ProcessDefinitions"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_SVC_ADMIN" artifactTypeEnumId="AT_SERVICE"
+            nameIsPattern="N" inheritAuthz="N"
+            artifactName="wf.flowable.WorkflowServices.list#ProcessInstances"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_SVC_ADMIN" artifactTypeEnumId="AT_SERVICE"
+            nameIsPattern="N" inheritAuthz="N"
+            artifactName="wf.flowable.WorkflowServices.suspend#ProcessDefinition"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_SVC_ADMIN" artifactTypeEnumId="AT_SERVICE"
+            nameIsPattern="N" inheritAuthz="N"
+            artifactName="wf.flowable.WorkflowServices.activate#ProcessDefinition"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_SVC_ADMIN" artifactTypeEnumId="AT_SERVICE"
+            nameIsPattern="N" inheritAuthz="N"
+            artifactName="wf.flowable.DesignerServices.list#ServiceNames"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_SVC_ADMIN" artifactTypeEnumId="AT_SERVICE"
+            nameIsPattern="N" inheritAuthz="N"
+            artifactName="wf.flowable.DesignerServices.list#ScreenLocations"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_SVC_ADMIN" artifactTypeEnumId="AT_SERVICE"
+            nameIsPattern="N" inheritAuthz="N"
+            artifactName="wf.flowable.DesignerServices.list#Users"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_SVC_ADMIN" artifactTypeEnumId="AT_SERVICE"
+            nameIsPattern="N" inheritAuthz="N"
+            artifactName="wf.flowable.DesignerServices.list#UserGroups"/>
+    <moqui.security.ArtifactAuthz artifactAuthzId="CF_SVC_ADMIN_AZ"
+            userGroupId="ADMIN" artifactGroupId="CF_SVC_ADMIN"
+            authzTypeEnumId="AUTHZT_ALWAYS" authzActionEnumId="AUTHZA_ALL"/>
+
+    <moqui.security.ArtifactGroup artifactGroupId="CF_SVC_USER" description="collie-flowable runtime services"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_SVC_USER" artifactTypeEnumId="AT_SERVICE"
+            nameIsPattern="N" inheritAuthz="N"
+            artifactName="wf.flowable.WorkflowServices.ping"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_SVC_USER" artifactTypeEnumId="AT_SERVICE"
+            nameIsPattern="N" inheritAuthz="N"
+            artifactName="wf.flowable.WorkflowServices.start#Process"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_SVC_USER" artifactTypeEnumId="AT_SERVICE"
+            nameIsPattern="N" inheritAuthz="N"
+            artifactName="wf.flowable.WorkflowServices.get#ProcessInstance"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_SVC_USER" artifactTypeEnumId="AT_SERVICE"
+            nameIsPattern="N" inheritAuthz="N"
+            artifactName="wf.flowable.WorkflowServices.claim#Task"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_SVC_USER" artifactTypeEnumId="AT_SERVICE"
+            nameIsPattern="N" inheritAuthz="N"
+            artifactName="wf.flowable.WorkflowServices.unclaim#Task"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_SVC_USER" artifactTypeEnumId="AT_SERVICE"
+            nameIsPattern="N" inheritAuthz="N"
+            artifactName="wf.flowable.WorkflowServices.complete#Task"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_SVC_USER" artifactTypeEnumId="AT_SERVICE"
+            nameIsPattern="N" inheritAuthz="N"
+            artifactName="wf.flowable.WorkflowServices.list#MyTasks"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_SVC_USER" artifactTypeEnumId="AT_SERVICE"
+            nameIsPattern="N" inheritAuthz="N"
+            artifactName="wf.flowable.WorkflowServices.list#CompletedTasks"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_SVC_USER" artifactTypeEnumId="AT_SERVICE"
+            nameIsPattern="N" inheritAuthz="N"
+            artifactName="wf.flowable.WorkflowServices.list#MyStarted"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_SVC_USER" artifactTypeEnumId="AT_SERVICE"
+            nameIsPattern="N" inheritAuthz="N"
+            artifactName="wf.flowable.WorkflowServices.list#TaskComments"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_SVC_USER" artifactTypeEnumId="AT_SERVICE"
+            nameIsPattern="N" inheritAuthz="N"
+            artifactName="wf.flowable.WorkflowServices.transfer#Task"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_SVC_USER" artifactTypeEnumId="AT_SERVICE"
+            nameIsPattern="N" inheritAuthz="N"
+            artifactName="wf.flowable.WorkflowServices.withdraw#Process"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_SVC_USER" artifactTypeEnumId="AT_SERVICE"
+            nameIsPattern="N" inheritAuthz="N"
+            artifactName="wf.flowable.WorkflowServices.cancel#Process"/>
+    <moqui.security.ArtifactAuthz artifactAuthzId="CF_SVC_USER_AZ"
+            userGroupId="ALL_USERS" artifactGroupId="CF_SVC_USER"
+            authzTypeEnumId="AUTHZT_ALWAYS" authzActionEnumId="AUTHZA_ALL"/>
+    <moqui.security.ArtifactAuthz artifactAuthzId="CF_SVC_USER_ADMIN_AZ"
+            userGroupId="ADMIN" artifactGroupId="CF_SVC_USER"
+            authzTypeEnumId="AUTHZT_ALWAYS" authzActionEnumId="AUTHZA_ALL"/>
+</entity-facade-xml>

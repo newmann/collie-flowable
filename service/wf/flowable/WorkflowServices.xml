@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
+
+    <service verb="ping" authenticate="true">
+        <out-parameters>
+            <parameter name="ok" type="Boolean"/>
+            <parameter name="engineName"/>
+        </out-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.ping(ec, context)</script>
+        </actions>
+    </service>
+
+    <service verb="deploy" noun="ProcessDefinition" authenticate="true">
+        <in-parameters>
+            <parameter name="processDefinitionKey" required="true"/>
+            <parameter name="bpmnXml" required="true" allow-html="any"/>
+            <parameter name="processName"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="deploymentId"/>
+            <parameter name="processDefinitionId"/>
+        </out-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.deployProcessDefinition(ec, context)</script>
+        </actions>
+    </service>
+
+    <service verb="save" noun="ProcessDefinition" authenticate="true">
+        <in-parameters>
+            <parameter name="processDefinitionKey" required="true"/>
+            <parameter name="bpmnXml" required="true" allow-html="any"/>
+            <parameter name="processName"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="statusId"/>
+        </out-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.saveProcessDefinition(ec, context)</script>
+        </actions>
+    </service>
+
+    <service verb="get" noun="ProcessDefinition" authenticate="true">
+        <in-parameters>
+            <parameter name="processDefinitionKey" required="true"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="processDefinitionKey"/>
+            <parameter name="processName"/>
+            <parameter name="bpmnXml"/>
+            <parameter name="statusId"/>
+            <parameter name="deploymentId"/>
+        </out-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.getProcessDefinition(ec, context)</script>
+        </actions>
+    </service>
+
+    <service verb="list" noun="ProcessDefinitions" authenticate="true">
+        <out-parameters>
+            <parameter name="processDefinitionList" type="List"/>
+        </out-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.listProcessDefinitions(ec, context)</script>
+        </actions>
+    </service>
+
+    <service verb="start" noun="Process" authenticate="true">
+        <in-parameters>
+            <parameter name="processDefinitionKey" required="true"/>
+            <parameter name="businessKey" required="true"/>
+            <parameter name="entityName"/>
+            <parameter name="pkValue"/>
+            <parameter name="variables" type="Map"/>
+            <parameter name="businessWithdrawService"/>
+            <parameter name="businessCancelService"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="processInstanceId"/>
+        </out-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.startProcess(ec, context)</script>
+        </actions>
+    </service>
+
+    <service verb="get" noun="ProcessInstance" authenticate="true">
+        <in-parameters>
+            <parameter name="processInstanceId"/>
+            <parameter name="businessKey"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="processInstanceId"/>
+            <parameter name="processDefinitionKey"/>
+            <parameter name="processDefinitionVersion" type="Integer"/>
+            <parameter name="businessKey"/>
+            <parameter name="status"/>
+            <parameter name="startUserId"/>
+            <parameter name="currentActivities" type="List"/>
+            <parameter name="currentTasks" type="List"/>
+            <parameter name="latestFormKey"/>
+            <parameter name="endTime"/>
+            <parameter name="businessWithdrawService"/>
+            <parameter name="businessCancelService"/>
+        </out-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.getProcessInstance(ec, context)</script>
+        </actions>
+    </service>
+
+    <service verb="claim" noun="Task" authenticate="true">
+        <in-parameters>
+            <parameter name="taskId" required="true"/>
+        </in-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.claimTask(ec, context)</script>
+        </actions>
+    </service>
+
+    <service verb="unclaim" noun="Task" authenticate="true">
+        <in-parameters>
+            <parameter name="taskId" required="true"/>
+        </in-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.unclaimTask(ec, context)</script>
+        </actions>
+    </service>
+
+    <service verb="complete" noun="Task" authenticate="true">
+        <in-parameters>
+            <parameter name="taskId" required="true"/>
+            <parameter name="outcome" required="true"/>
+            <parameter name="comment"/>
+        </in-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.completeTask(ec, context)</script>
+        </actions>
+    </service>
+
+    <service verb="list" noun="MyTasks" authenticate="true">
+        <out-parameters>
+            <parameter name="taskList" type="List"/>
+        </out-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.listMyTasks(ec, context)</script>
+        </actions>
+    </service>
+
+    <service verb="list" noun="CompletedTasks" authenticate="true">
+        <out-parameters>
+            <parameter name="taskList" type="List"/>
+        </out-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.listCompletedTasks(ec, context)</script>
+        </actions>
+    </service>
+
+    <service verb="list" noun="MyStarted" authenticate="true">
+        <out-parameters>
+            <parameter name="instanceList" type="List"/>
+        </out-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.listMyStarted(ec, context)</script>
+        </actions>
+    </service>
+
+    <service verb="list" noun="TaskComments" authenticate="true">
+        <in-parameters>
+            <parameter name="processInstanceId"/>
+            <parameter name="businessKey"/>
+            <parameter name="entityName"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="commentList" type="List"/>
+        </out-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.listTaskComments(ec, context)</script>
+        </actions>
+    </service>
+
+    <service verb="transfer" noun="Task" authenticate="true">
+        <in-parameters>
+            <parameter name="taskId" required="true"/>
+            <parameter name="toUserId" required="true"/>
+            <parameter name="comment"/>
+        </in-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.transferTask(ec, context)</script>
+        </actions>
+    </service>
+
+    <service verb="withdraw" noun="Process" authenticate="true">
+        <in-parameters>
+            <parameter name="processInstanceId"/>
+            <parameter name="businessKey"/>
+            <parameter name="comment"/>
+            <parameter name="businessWithdrawService"/>
+        </in-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.withdrawProcess(ec, context)</script>
+        </actions>
+    </service>
+
+    <service verb="cancel" noun="Process" authenticate="true">
+        <in-parameters>
+            <parameter name="processInstanceId"/>
+            <parameter name="businessKey"/>
+            <parameter name="comment"/>
+            <parameter name="businessCancelService"/>
+        </in-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.cancelProcess(ec, context)</script>
+        </actions>
+    </service>
+
+    <service verb="list" noun="ProcessInstances" authenticate="true">
+        <out-parameters>
+            <parameter name="instanceList" type="List"/>
+        </out-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.listProcessInstances(ec, context)</script>
+        </actions>
+    </service>
+
+    <service verb="suspend" noun="ProcessDefinition" authenticate="true">
+        <in-parameters>
+            <parameter name="processDefinitionKey" required="true"/>
+        </in-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.suspendProcessDefinition(ec, context)</script>
+        </actions>
+    </service>
+
+    <service verb="activate" noun="ProcessDefinition" authenticate="true">
+        <in-parameters>
+            <parameter name="processDefinitionKey" required="true"/>
+        </in-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.activateProcessDefinition(ec, context)</script>
+        </actions>
+    </service>
+</services>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<screen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/xml-screen-3.xsd"
+        standalone="true" require-authentication="true">
+
+    <parameter name="file"/>
+
+    <actions>
+        <script><![CDATA[
+            def allowed = [
+                'bpmn-modeler.production.min.js',
+                'bpmn-navigated-viewer.production.min.js',
+                'bpmn-js.css',
+                'diagram-js.css',
+                'bpmn.css',
+                'flowable.json',
+                'designer.js',
+                'bpmn-font-fix.css',
+                'bpmn.woff2',
+                'bpmn.woff',
+                'bpmn.ttf'
+            ] as Set
+            if (!file || !allowed.contains(file)) {
+                ec.web.sendError(404, "Unknown asset", null)
+            } else {
+                ec.web.sendResourceResponse("component://collie-flowable/screen/static/bpmn-js/" + file, true)
+            }
+        ]]></script>
+    </actions>
+    <widgets></widgets>
+</screen>

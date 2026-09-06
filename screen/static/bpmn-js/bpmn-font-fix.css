@@ -1,0 +1,8 @@
+@font-face {
+  font-family: 'bpmn';
+  src: url('/apps/collie-flowable/Asset?file=bpmn.woff2') format('woff2'),
+       url('/apps/collie-flowable/Asset?file=bpmn.woff') format('woff'),
+       url('/apps/collie-flowable/Asset?file=bpmn.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
+
+    <service verb="list" noun="ServiceNames" authenticate="true">
+        <in-parameters>
+            <parameter name="query"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="serviceNameList" type="List"/>
+        </out-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.listServiceNames(ec, context)</script>
+        </actions>
+    </service>
+
+    <service verb="list" noun="ScreenLocations" authenticate="true">
+        <in-parameters>
+            <parameter name="query"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="screenLocationList" type="List"/>
+        </out-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.listScreenLocations(ec, context)</script>
+        </actions>
+    </service>
+
+    <service verb="list" noun="Users" authenticate="true">
+        <in-parameters>
+            <parameter name="query"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="userList" type="List"/>
+        </out-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.listUsers(ec, context)</script>
+        </actions>
+    </service>
+
+    <service verb="list" noun="UserGroups" authenticate="true">
+        <in-parameters>
+            <parameter name="query"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="userGroupList" type="List"/>
+        </out-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.listUserGroups(ec, context)</script>
+        </actions>
+    </service>
+</services>

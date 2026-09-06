@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<screen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/xml-screen-3.xsd"
+        default-menu-title="Monitor" require-authentication="true">
+
+    <parameter name="processInstanceId"/>
+    <parameter name="processDefinitionKey"/>
+
+    <actions>
+        <service-call name="wf.flowable.WorkflowServices.list#ProcessInstances" out-map="context"/>
+        <if condition="processInstanceId">
+            <set field="selectedInstance" from="instanceList?.find { it.processInstanceId == processInstanceId }"/>
+            <if condition="!processDefinitionKey">
+                <set field="processDefinitionKey" from="selectedInstance?.processDefinitionKey"/>
+            </if>
+            <script>context.currentActivitiesJson = groovy.json.JsonOutput.toJson(context.selectedInstance?.currentActivities ?: [])</script>
+        </if>
+        <if condition="processDefinitionKey">
+            <service-call name="wf.flowable.WorkflowServices.get#ProcessDefinition" out-map="defnOut">
+                <field-map field-name="processDefinitionKey" from="processDefinitionKey"/>
+            </service-call>
+            <set field="monitorBpmnXml" from="defnOut.bpmnXml"/>
+        </if>
+        <if condition="!currentActivitiesJson"><set field="currentActivitiesJson" value="[]"/></if>
+    </actions>
+    <widgets>
+        <label text="Process Monitor" type="h4"/>
+        <label text="Read-only diagram. Keep the bpmn.io watermark visible." type="p"/>
+        <form-list name="InstanceList" list="instanceList" skip-form="true">
+            <field name="processInstanceId"><default-field title="Instance">
+                <link url="." text="${processInstanceId}" link-type="anchor">
+                    <parameter name="processInstanceId"/>
+                    <parameter name="processDefinitionKey"/>
+                </link>
+            </default-field></field>
+            <field name="processDefinitionKey"><default-field title="Key">
+                <link url="." text="${processDefinitionKey}" link-type="anchor">
+                    <parameter name="processDefinitionKey"/>
+                    <parameter name="processInstanceId"/>
+                </link>
+            </default-field></field>
+            <field name="businessKey"><default-field title="Business Key"><display/></default-field></field>
+            <field name="startUserId"><default-field title="Starter"><display/></default-field></field>
+            <field name="status"><default-field title="Status"><display/></default-field></field>
+            <field name="currentActivities"><default-field title="Current"><display/></default-field></field>
+        </form-list>
+        <container id="wf-monitor-canvas" style="height:480px;border:1px solid #ccc;position:relative;"/>
+        <render-mode>
+            <text type="html,qvt,vuet"><![CDATA[
+<textarea id="wf-monitor-xml" style="display:none">${monitorBpmnXml!}</textarea>
+<textarea id="wf-monitor-activities" style="display:none">${currentActivitiesJson!'[]'}</textarea>
+<style>
+.highlight:not(.djs-connection) .djs-visual > :nth-child(1) {
+  fill: rgba(255, 206, 86, 0.35) !important;
+  stroke: #f0ad4e !important;
+}
+</style>
+            ]]></text>
+            <text type="html"><![CDATA[
+<textarea id="wf-monitor-xml" style="display:none">${monitorBpmnXml!}</textarea>
+<textarea id="wf-monitor-activities" style="display:none">${currentActivitiesJson!'[]'}</textarea>
+<style>
+.highlight:not(.djs-connection) .djs-visual > :nth-child(1) {
+  fill: rgba(255, 206, 86, 0.35) !important;
+  stroke: #f0ad4e !important;
+}
+</style>
+<link rel="stylesheet" href="/apps/collie-flowable/Asset?file=diagram-js.css"/>
+<link rel="stylesheet" href="/apps/collie-flowable/Asset?file=bpmn-js.css"/>
+<link rel="stylesheet" href="/apps/collie-flowable/Asset?file=bpmn.css"/>
+<link rel="stylesheet" href="/apps/collie-flowable/Asset?file=bpmn-font-fix.css"/>
+<script src="/apps/collie-flowable/Asset?file=bpmn-navigated-viewer.production.min.js"></script>
+<script>
+(function initMonitor() {
+  if (typeof BpmnJS === 'undefined') { setTimeout(initMonitor, 80); return; }
+  var el = document.getElementById('wf-monitor-canvas');
+  if (!el || el.getAttribute('data-wf-ready') === '1') return;
+  var xmlEl = document.getElementById('wf-monitor-xml');
+  if (!xmlEl) { setTimeout(initMonitor, 80); return; }
+  var xml = (xmlEl.value || '').trim();
+  if (!xml) return;
+  el.setAttribute('data-wf-ready', '1');
+  var activities = [];
+  try {
+    var actEl = document.getElementById('wf-monitor-activities');
+    activities = JSON.parse((actEl && actEl.value) || '[]');
+  } catch (e) {}
+  var viewer = new BpmnJS({ container: el });
+  viewer.importXML(xml).then(function () {
+    if (!activities || !activities.length) return;
+    var registry = viewer.get('elementRegistry');
+    var canvas = viewer.get('canvas');
+    activities.forEach(function (id) {
+      if (registry.get(id)) canvas.addMarker(id, 'highlight');
+    });
+  }).catch(function (err) { console.error(err); });
+})();
+</script>
+            ]]></text>
+            <text type="qvt,vuet"><![CDATA[
+<textarea id="wf-monitor-xml" style="display:none">${monitorBpmnXml!}</textarea>
+<textarea id="wf-monitor-activities" style="display:none">${currentActivitiesJson!'[]'}</textarea>
+<style>
+.highlight:not(.djs-connection) .djs-visual > :nth-child(1) {
+  fill: rgba(255, 206, 86, 0.35) !important;
+  stroke: #f0ad4e !important;
+}
+</style>
+<m-stylesheet href="/apps/collie-flowable/Asset?file=diagram-js.css"></m-stylesheet>
+<m-stylesheet href="/apps/collie-flowable/Asset?file=bpmn-js.css"></m-stylesheet>
+<m-stylesheet href="/apps/collie-flowable/Asset?file=bpmn.css"></m-stylesheet>
+<m-stylesheet href="/apps/collie-flowable/Asset?file=bpmn-font-fix.css"></m-stylesheet>
+<m-script src="/apps/collie-flowable/Asset?file=bpmn-navigated-viewer.production.min.js"></m-script>
+<m-script>
+(function initMonitor() {
+  if (typeof BpmnJS === 'undefined') { setTimeout(initMonitor, 80); return; }
+  var el = document.getElementById('wf-monitor-canvas');
+  if (!el || el.getAttribute('data-wf-ready') === '1') return;
+  var xmlEl = document.getElementById('wf-monitor-xml');
+  if (!xmlEl) { setTimeout(initMonitor, 80); return; }
+  var xml = (xmlEl.value || '').trim();
+  if (!xml) return;
+  el.setAttribute('data-wf-ready', '1');
+  var activities = [];
+  try {
+    var actEl = document.getElementById('wf-monitor-activities');
+    activities = JSON.parse((actEl && actEl.value) || '[]');
+  } catch (e) {}
+  var viewer = new BpmnJS({ container: el });
+  viewer.importXML(xml).then(function () {
+    if (!activities || !activities.length) return;
+    var registry = viewer.get('elementRegistry');
+    var canvas = viewer.get('canvas');
+    activities.forEach(function (id) {
+      if (registry.get(id)) canvas.addMarker(id, 'highlight');
+    });
+  }).catch(function (err) { console.error(err); });
+})();
+</m-script>
+            ]]></text>
+        </render-mode>
+    </widgets>
+</screen>

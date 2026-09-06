@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:flowable="http://flowable.org/bpmn"
+        xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+        xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+        xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+        targetNamespace="http://moqui.org/flowable"
+        id="demoAndDefinitions">
+    <process id="demoAnd" name="Demo Parallel AND" isExecutable="true">
+        <startEvent id="start" name="Start"/>
+        <sequenceFlow id="toFork" sourceRef="start" targetRef="fork"/>
+        <parallelGateway id="fork" name="Fork"/>
+        <sequenceFlow id="toLeft" sourceRef="fork" targetRef="leftTask"/>
+        <sequenceFlow id="toRight" sourceRef="fork" targetRef="rightTask"/>
+        <userTask id="leftTask" name="Left"
+                flowable:candidateGroups="ADMIN"
+                flowable:formKey="component://collie-wf-demo/screen/RequestManager.xml"/>
+        <userTask id="rightTask" name="Right"
+                flowable:candidateGroups="ADMIN"
+                flowable:formKey="component://collie-wf-demo/screen/RequestFinance.xml"/>
+        <sequenceFlow id="leftToJoin" sourceRef="leftTask" targetRef="join"/>
+        <sequenceFlow id="rightToJoin" sourceRef="rightTask" targetRef="join"/>
+        <parallelGateway id="join" name="Join"/>
+        <sequenceFlow id="joinToEnd" sourceRef="join" targetRef="end"/>
+        <endEvent id="end" name="End"/>
+    </process>
+    <bpmndi:BPMNDiagram id="BPMNDiagram_demoAnd">
+        <bpmndi:BPMNPlane id="BPMNPlane_demoAnd" bpmnElement="demoAnd">
+            <bpmndi:BPMNShape id="start_di" bpmnElement="start">
+                <dc:Bounds x="152" y="202" width="36" height="36"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="fork_di" bpmnElement="fork">
+                <dc:Bounds x="250" y="195" width="50" height="50"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="leftTask_di" bpmnElement="leftTask">
+                <dc:Bounds x="360" y="80" width="120" height="80"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="rightTask_di" bpmnElement="rightTask">
+                <dc:Bounds x="360" y="280" width="120" height="80"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="join_di" bpmnElement="join">
+                <dc:Bounds x="540" y="195" width="50" height="50"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="end_di" bpmnElement="end">
+                <dc:Bounds x="660" y="202" width="36" height="36"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNEdge id="toFork_di" bpmnElement="toFork">
+                <di:waypoint x="188" y="220"/>
+                <di:waypoint x="250" y="220"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="toLeft_di" bpmnElement="toLeft">
+                <di:waypoint x="275" y="195"/>
+                <di:waypoint x="275" y="120"/>
+                <di:waypoint x="360" y="120"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="toRight_di" bpmnElement="toRight">
+                <di:waypoint x="275" y="245"/>
+                <di:waypoint x="275" y="320"/>
+                <di:waypoint x="360" y="320"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="leftToJoin_di" bpmnElement="leftToJoin">
+                <di:waypoint x="480" y="120"/>
+                <di:waypoint x="565" y="120"/>
+                <di:waypoint x="565" y="195"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="rightToJoin_di" bpmnElement="rightToJoin">
+                <di:waypoint x="480" y="320"/>
+                <di:waypoint x="565" y="320"/>
+                <di:waypoint x="565" y="245"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="joinToEnd_di" bpmnElement="joinToEnd">
+                <di:waypoint x="590" y="220"/>
+                <di:waypoint x="660" y="220"/>
+            </bpmndi:BPMNEdge>
+        </bpmndi:BPMNPlane>
+    </bpmndi:BPMNDiagram>
+</definitions>

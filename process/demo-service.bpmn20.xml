@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:flowable="http://flowable.org/bpmn"
+        xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+        xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+        xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+        targetNamespace="http://moqui.org/flowable"
+        id="demoServiceDefinitions">
+    <process id="demoService" name="Demo Service Task" isExecutable="true">
+        <startEvent id="start" name="Start"/>
+        <sequenceFlow id="toPing" sourceRef="start" targetRef="callPing"/>
+        <serviceTask id="callPing" name="Ping"
+                flowable:delegateExpression="${moquiServiceDelegate}"
+                flowable:async="true">
+            <extensionElements>
+                <flowable:field name="serviceName">
+                    <flowable:string><![CDATA[wf.flowable.WorkflowServices.ping]]></flowable:string>
+                </flowable:field>
+            </extensionElements>
+        </serviceTask>
+        <sequenceFlow id="toEnd" sourceRef="callPing" targetRef="end"/>
+        <endEvent id="end" name="End"/>
+    </process>
+    <bpmndi:BPMNDiagram id="BPMNDiagram_demoService">
+        <bpmndi:BPMNPlane id="BPMNPlane_demoService" bpmnElement="demoService">
+            <bpmndi:BPMNShape id="start_di" bpmnElement="start">
+                <dc:Bounds x="152" y="202" width="36" height="36"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="callPing_di" bpmnElement="callPing">
+                <dc:Bounds x="240" y="180" width="120" height="80"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="end_di" bpmnElement="end">
+                <dc:Bounds x="430" y="202" width="36" height="36"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNEdge id="toPing_di" bpmnElement="toPing">
+                <di:waypoint x="188" y="220"/>
+                <di:waypoint x="240" y="220"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="toEnd_di" bpmnElement="toEnd">
+                <di:waypoint x="360" y="220"/>
+                <di:waypoint x="430" y="220"/>
+            </bpmndi:BPMNEdge>
+        </bpmndi:BPMNPlane>
+    </bpmndi:BPMNDiagram>
+</definitions>

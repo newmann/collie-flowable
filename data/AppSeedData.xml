@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-facade-xml type="seed">
+    <moqui.security.ArtifactGroup artifactGroupId="CF_APP" description="collie-flowable app root"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_APP"
+            artifactTypeEnumId="AT_XML_SCREEN" inheritAuthz="N"
+            artifactName="component://collie-flowable/screen/App.xml"/>
+    <moqui.security.ArtifactAuthz artifactAuthzId="CF_APP_ALL_USERS"
+            userGroupId="ALL_USERS" artifactGroupId="CF_APP"
+            authzTypeEnumId="AUTHZT_ALWAYS" authzActionEnumId="AUTHZA_VIEW"/>
+    <moqui.security.ArtifactAuthz artifactAuthzId="CF_APP_ADMIN"
+            userGroupId="ADMIN" artifactGroupId="CF_APP"
+            authzTypeEnumId="AUTHZT_ALWAYS" authzActionEnumId="AUTHZA_ALL"/>
+
+    <moqui.security.ArtifactGroup artifactGroupId="CF_ADMIN_SCREENS" description="collie-flowable admin screens"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_ADMIN_SCREENS"
+            artifactTypeEnumId="AT_XML_SCREEN" inheritAuthz="Y"
+            artifactName="component://collie-flowable/screen/ProcessList.xml"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_ADMIN_SCREENS"
+            artifactTypeEnumId="AT_XML_SCREEN" inheritAuthz="Y"
+            artifactName="component://collie-flowable/screen/ProcessDesigner.xml"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_ADMIN_SCREENS"
+            artifactTypeEnumId="AT_XML_SCREEN" inheritAuthz="Y"
+            artifactName="component://collie-flowable/screen/Monitor.xml"/>
+    <moqui.security.ArtifactGroup artifactGroupId="CF_ASSET" description="collie-flowable static assets"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_ASSET"
+            artifactTypeEnumId="AT_XML_SCREEN" inheritAuthz="N"
+            artifactName="component://collie-flowable/screen/Asset.xml"/>
+    <moqui.security.ArtifactAuthz artifactAuthzId="CF_ASSET_ALL_USERS"
+            userGroupId="ALL_USERS" artifactGroupId="CF_ASSET"
+            authzTypeEnumId="AUTHZT_ALWAYS" authzActionEnumId="AUTHZA_VIEW"/>
+    <moqui.security.ArtifactAuthz artifactAuthzId="CF_ASSET_ADMIN"
+            userGroupId="ADMIN" artifactGroupId="CF_ASSET"
+            authzTypeEnumId="AUTHZT_ALWAYS" authzActionEnumId="AUTHZA_ALL"/>
+    <moqui.security.ArtifactAuthz artifactAuthzId="CF_ADMIN_SCREENS_AZ"
+            userGroupId="ADMIN" artifactGroupId="CF_ADMIN_SCREENS"
+            authzTypeEnumId="AUTHZT_ALWAYS" authzActionEnumId="AUTHZA_ALL"/>
+
+    <moqui.security.ArtifactGroup artifactGroupId="CF_USER_SCREENS" description="collie-flowable inbox screens"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_USER_SCREENS"
+            artifactTypeEnumId="AT_XML_SCREEN" inheritAuthz="Y"
+            artifactName="component://collie-flowable/screen/TaskList.xml"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="CF_USER_SCREENS"
+            artifactTypeEnumId="AT_XML_SCREEN" inheritAuthz="Y"
+            artifactName="component://collie-flowable/screen/InstanceDetail.xml"/>
+    <moqui.security.ArtifactAuthz artifactAuthzId="CF_USER_SCREENS_AZ"
+            userGroupId="ALL_USERS" artifactGroupId="CF_USER_SCREENS"
+            authzTypeEnumId="AUTHZT_ALWAYS" authzActionEnumId="AUTHZA_VIEW"/>
+    <moqui.security.ArtifactAuthz artifactAuthzId="CF_USER_SCREENS_ADMIN_AZ"
+            userGroupId="ADMIN" artifactGroupId="CF_USER_SCREENS"
+            authzTypeEnumId="AUTHZT_ALWAYS" authzActionEnumId="AUTHZA_ALL"/>
+</entity-facade-xml>

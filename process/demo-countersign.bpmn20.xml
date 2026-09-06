@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:flowable="http://flowable.org/bpmn"
+        xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+        xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+        xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+        targetNamespace="http://moqui.org/flowable"
+        id="demoCountersignDefinitions">
+    <process id="demoCountersign" name="Demo Countersign" isExecutable="true">
+        <startEvent id="start" name="Start"/>
+        <sequenceFlow id="toSign" sourceRef="start" targetRef="allApprove"/>
+
+        <userTask id="allApprove" name="All must approve"
+                flowable:assignee="${approver}"
+                flowable:formKey="component://collie-wf-demo/screen/RequestManager.xml">
+            <multiInstanceLoopCharacteristics isSequential="false"
+                    flowable:collection="${approverList}" flowable:elementVariable="approver">
+                <completionCondition xsi:type="tFormalExpression"><![CDATA[${nrOfCompletedInstances == nrOfInstances}]]></completionCondition>
+            </multiInstanceLoopCharacteristics>
+        </userTask>
+        <sequenceFlow id="signToEnd" sourceRef="allApprove" targetRef="end"/>
+
+        <endEvent id="end" name="End"/>
+    </process>
+    <bpmndi:BPMNDiagram id="BPMNDiagram_demoCountersign">
+        <bpmndi:BPMNPlane id="BPMNPlane_demoCountersign" bpmnElement="demoCountersign">
+            <bpmndi:BPMNShape id="start_di" bpmnElement="start">
+                <dc:Bounds x="152" y="162" width="36" height="36"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="allApprove_di" bpmnElement="allApprove">
+                <dc:Bounds x="250" y="140" width="160" height="80"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="end_di" bpmnElement="end">
+                <dc:Bounds x="480" y="162" width="36" height="36"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNEdge id="toSign_di" bpmnElement="toSign">
+                <di:waypoint x="188" y="180"/>
+                <di:waypoint x="250" y="180"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="signToEnd_di" bpmnElement="signToEnd">
+                <di:waypoint x="410" y="180"/>
+                <di:waypoint x="480" y="180"/>
+            </bpmndi:BPMNEdge>
+        </bpmndi:BPMNPlane>
+    </bpmndi:BPMNDiagram>
+</definitions>

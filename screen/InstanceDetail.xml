@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<screen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/xml-screen-3.xsd"
+        default-menu-title="Instance" require-authentication="true">
+
+    <parameter name="processInstanceId"/>
+    <parameter name="businessKey"/>
+    <parameter name="taskId"/>
+    <parameter name="entityName"/>
+    <parameter name="businessWithdrawService"/>
+    <parameter name="businessCancelService"/>
+
+    <transition name="complete">
+        <service-call name="wf.flowable.WorkflowServices.complete#Task"/>
+        <default-response url=".">
+            <parameter name="processInstanceId"/>
+            <parameter name="businessKey"/>
+            <parameter name="taskId"/>
+        </default-response>
+    </transition>
+    <transition name="withdraw">
+        <service-call name="wf.flowable.WorkflowServices.withdraw#Process"/>
+        <default-response url="../TaskList"/>
+    </transition>
+    <transition name="cancel">
+        <service-call name="wf.flowable.WorkflowServices.cancel#Process"/>
+        <default-response url="../TaskList"/>
+    </transition>
+
+    <actions>
+        <service-call name="wf.flowable.WorkflowServices.get#ProcessInstance" out-map="instanceOut">
+            <field-map field-name="processInstanceId" from="processInstanceId"/>
+            <field-map field-name="businessKey" from="businessKey"/>
+        </service-call>
+        <set field="instance" from="instanceOut"/>
+        <set field="processInstanceId" from="instance.processInstanceId ?: processInstanceId"/>
+        <set field="businessKey" from="instance.businessKey ?: businessKey"/>
+        <if condition="!ec.message.hasError()">
+            <service-call name="wf.flowable.WorkflowServices.list#TaskComments" out-map="commentOut">
+                <field-map field-name="processInstanceId" from="processInstanceId"/>
+                <field-map field-name="businessKey" from="businessKey"/>
+                <field-map field-name="entityName" from="entityName"/>
+            </service-call>
+            <set field="commentList" from="commentOut.commentList"/>
+        </if>
+        <set field="currentTask" from="taskId ? instance.currentTasks?.find { it.taskId == taskId } : instance.currentTasks?.find { it.taskId }"/>
+        <if condition="!taskId &amp;&amp; currentTask?.taskId">
+            <set field="taskId" from="currentTask.taskId"/>
+        </if>
+        <set field="formKey" from="ec.message.hasError() ? null : (currentTask?.formKey ?: instance.latestFormKey)"/>
+        <set field="requestId" from="businessKey"/>
+        <set field="businessWithdrawService" from="businessWithdrawService ?: instance.businessWithdrawService"/>
+        <set field="businessCancelService" from="businessCancelService ?: instance.businessCancelService"/>
+        <set field="canComplete" from="!ec.message.hasError() &amp;&amp; currentTask?.assignee == ec.user.userId"/>
+    </actions>
+    <widgets>
+        <label text="Instance ${instance.processInstanceId ?: ''}" type="h4"/>
+        <label text="Key ${instance.processDefinitionKey ?: ''}  status ${instance.status ?: ''}  businessKey ${instance.businessKey ?: ''}"/>
+        <container-box>
+            <box-header title="Task comment"/>
+            <box-body>
+                <form-single name="CompleteHere" transition="complete" condition="canComplete">
+                    <field name="taskId" from="taskId"><default-field title="Task Id"><hidden/></default-field></field>
+                    <field name="outcome"><default-field title="Outcome">
+                        <drop-down>
+                            <option key="approve" text="Approve"/>
+                            <option key="reject" text="Reject"/>
+                            <option key="return" text="Return"/>
+                        </drop-down>
+                    </default-field></field>
+                    <field name="comment"><default-field title="Comment"><text-area rows="3"/></default-field></field>
+                    <field name="submit"><default-field title="Complete"><submit/></default-field></field>
+                </form-single>
+                <label text="Claim the task first, or you are not the assignee." condition="!canComplete &amp;&amp; !ec.message.hasError()"/>
+            </box-body>
+        </container-box>
+        <container-row>
+            <row-col md="6">
+                <label text="Timeline" type="h5"/>
+                <form-list name="CommentList" list="commentList" skip-form="true">
+                    <field name="commentDate"><default-field title="When"><display/></default-field></field>
+                    <field name="userId"><default-field title="User"><display/></default-field></field>
+                    <field name="nodeId"><default-field title="Node"><display/></default-field></field>
+                    <field name="outcome"><default-field title="Outcome"><display/></default-field></field>
+                    <field name="comment"><default-field title="Comment"><display/></default-field></field>
+                </form-list>
+            </row-col>
+            <row-col md="6">
+                <label text="Business form" type="h5"/>
+                <label text="${formKey ?: 'No formKey for this node'}"/>
+                <if condition="formKey &amp;&amp; !ec.message.hasError()">
+                    <include-screen location="${formKey}" share-scope="true"/>
+                </if>
+            </row-col>
+        </container-row>
+        <form-single name="WithdrawForm" transition="withdraw" condition="!ec.message.hasError()">
+            <field name="processInstanceId" from="processInstanceId"><default-field title="Instance"><hidden/></default-field></field>
+            <field name="businessKey" from="businessKey"><default-field title="Business Key"><hidden/></default-field></field>
+            <field name="businessWithdrawService" from="businessWithdrawService"><default-field title=""><hidden/></default-field></field>
+            <field name="comment"><default-field title="Withdraw reason"><text-area rows="2"/></default-field></field>
+            <field name="submit"><default-field title="Withdraw"><submit/></default-field></field>
+        </form-single>
+        <form-single name="CancelForm" transition="cancel" condition="!ec.message.hasError()">
+            <field name="processInstanceId" from="processInstanceId"><default-field title="Instance"><hidden/></default-field></field>
+            <field name="businessKey" from="businessKey"><default-field title="Business Key"><hidden/></default-field></field>
+            <field name="businessCancelService" from="businessCancelService"><default-field title=""><hidden/></default-field></field>
+            <field name="comment"><default-field title="Cancel reason"><text-area rows="2"/></default-field></field>
+            <field name="submit"><default-field title="Cancel"><submit/></default-field></field>
+        </form-single>
+    </widgets>
+</screen>

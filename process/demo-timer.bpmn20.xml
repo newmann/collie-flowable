@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:flowable="http://flowable.org/bpmn"
+        xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+        xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+        xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+        targetNamespace="http://moqui.org/flowable"
+        id="demoTimerDefinitions">
+    <process id="demoTimer" name="Demo Timer Escalation" isExecutable="true">
+        <startEvent id="start" name="Start"/>
+        <sequenceFlow id="toReview" sourceRef="start" targetRef="firstReview"/>
+
+        <userTask id="firstReview" name="First Review"
+                flowable:candidateGroups="ADMIN"
+                flowable:formKey="component://collie-wf-demo/screen/RequestManager.xml"/>
+        <boundaryEvent id="reviewTimer" name="Escalate after 5 minutes" attachedToRef="firstReview" cancelActivity="true">
+            <timerEventDefinition>
+                <timeDuration>PT5M</timeDuration>
+            </timerEventDefinition>
+        </boundaryEvent>
+        <sequenceFlow id="timerToEscalation" sourceRef="reviewTimer" targetRef="escalationReview"/>
+
+        <userTask id="escalationReview" name="Escalation Review"
+                flowable:candidateGroups="ADMIN"
+                flowable:formKey="component://collie-wf-demo/screen/RequestFinance.xml"/>
+        <sequenceFlow id="escToEnd" sourceRef="escalationReview" targetRef="end"/>
+        <sequenceFlow id="reviewToEnd" sourceRef="firstReview" targetRef="end"/>
+
+        <endEvent id="end" name="End"/>
+    </process>
+    <bpmndi:BPMNDiagram id="BPMNDiagram_demoTimer">
+        <bpmndi:BPMNPlane id="BPMNPlane_demoTimer" bpmnElement="demoTimer">
+            <bpmndi:BPMNShape id="start_di" bpmnElement="start">
+                <dc:Bounds x="152" y="162" width="36" height="36"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="firstReview_di" bpmnElement="firstReview">
+                <dc:Bounds x="250" y="140" width="140" height="80"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="reviewTimer_di" bpmnElement="reviewTimer">
+                <dc:Bounds x="332" y="202" width="36" height="36"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="escalationReview_di" bpmnElement="escalationReview">
+                <dc:Bounds x="430" y="260" width="160" height="80"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="end_di" bpmnElement="end">
+                <dc:Bounds x="660" y="162" width="36" height="36"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNEdge id="toReview_di" bpmnElement="toReview">
+                <di:waypoint x="188" y="180"/>
+                <di:waypoint x="250" y="180"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="timerToEscalation_di" bpmnElement="timerToEscalation">
+                <di:waypoint x="350" y="238"/>
+                <di:waypoint x="350" y="300"/>
+                <di:waypoint x="430" y="300"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="reviewToEnd_di" bpmnElement="reviewToEnd">
+                <di:waypoint x="390" y="180"/>
+                <di:waypoint x="660" y="180"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="escToEnd_di" bpmnElement="escToEnd">
+                <di:waypoint x="590" y="300"/>
+                <di:waypoint x="678" y="300"/>
+                <di:waypoint x="678" y="198"/>
+            </bpmndi:BPMNEdge>
+        </bpmndi:BPMNPlane>
+    </bpmndi:BPMNDiagram>
+</definitions>

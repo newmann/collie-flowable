@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<moqui-conf xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/moqui-conf-3.xsd">
+    <default-property name="flowable_job_executor_enabled" value="true"/>
+
+    <tools>
+        <tool-factory class="wf.flowable.FlowableToolFactory" init-priority="40" disabled="false"/>
+    </tools>
+
+    <screen-facade>
+        <screen location="component://webroot/screen/webroot/apps.xml">
+            <subscreens-item name="collie-flowable" menu-title="Workflow" menu-index="26"
+                    location="component://collie-flowable/screen/App.xml"/>
+        </screen>
+    </screen-facade>
+</moqui-conf>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-facade-xml type="seed">
+    <moqui.basic.StatusType statusTypeId="WfProcessDef" description="Workflow process definition"/>
+    <moqui.basic.StatusItem statusId="WfDefDraft" statusTypeId="WfProcessDef" sequenceNum="1" description="Draft"/>
+    <moqui.basic.StatusItem statusId="WfDefDeployed" statusTypeId="WfProcessDef" sequenceNum="2" description="Deployed"/>
+    <moqui.basic.StatusItem statusId="WfDefSuspended" statusTypeId="WfProcessDef" sequenceNum="3" description="Suspended"/>
+    <moqui.basic.StatusFlow statusFlowId="WfDef" statusTypeId="WfProcessDef" description="Workflow definition lifecycle"/>
+    <moqui.basic.StatusFlowItem statusFlowId="WfDef" statusId="WfDefDraft" isInitial="Y"/>
+    <moqui.basic.StatusFlowItem statusFlowId="WfDef" statusId="WfDefDeployed"/>
+    <moqui.basic.StatusFlowItem statusFlowId="WfDef" statusId="WfDefSuspended"/>
+    <moqui.basic.StatusFlowTransition statusFlowId="WfDef" statusId="WfDefDraft" toStatusId="WfDefDeployed" transitionName="Deploy"/>
+    <moqui.basic.StatusFlowTransition statusFlowId="WfDef" statusId="WfDefDeployed" toStatusId="WfDefDraft" transitionName="Revise"/>
+    <moqui.basic.StatusFlowTransition statusFlowId="WfDef" statusId="WfDefDeployed" toStatusId="WfDefSuspended" transitionName="Suspend"/>
+    <moqui.basic.StatusFlowTransition statusFlowId="WfDef" statusId="WfDefSuspended" toStatusId="WfDefDeployed" transitionName="Activate"/>
+
+    <moqui.basic.StatusType statusTypeId="WfProcessLink" description="Workflow process link"/>
+    <moqui.basic.StatusItem statusId="WfLinkActive" statusTypeId="WfProcessLink" sequenceNum="1" description="Active"/>
+    <moqui.basic.StatusItem statusId="WfLinkEnded" statusTypeId="WfProcessLink" sequenceNum="2" description="Ended"/>
+    <moqui.basic.StatusFlow statusFlowId="WfLink" statusTypeId="WfProcessLink" description="Workflow link lifecycle"/>
+    <moqui.basic.StatusFlowItem statusFlowId="WfLink" statusId="WfLinkActive" isInitial="Y"/>
+    <moqui.basic.StatusFlowItem statusFlowId="WfLink" statusId="WfLinkEnded"/>
+    <moqui.basic.StatusFlowTransition statusFlowId="WfLink" statusId="WfLinkActive" toStatusId="WfLinkEnded" transitionName="End"/>
+    <moqui.basic.StatusFlowTransition statusFlowId="WfLink" statusId="WfLinkEnded" toStatusId="WfLinkActive" transitionName="Restart"/>
+
+    <moqui.security.user.NotificationTopic topic="WorkflowTask" description="Workflow task assigned"
+            typeString="info" showAlert="Y" persistOnSend="Y" receiveNotifications="Y"
+            titleTemplate="Workflow task ${taskName?:taskId}"
+            linkTemplate="/qapps/collie-flowable/TaskList?taskId=${taskId}"/>
+</entity-facade-xml>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<screen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/xml-screen-3.xsd"
+        default-menu-title="Definitions" require-authentication="true">
+
+    <transition name="deploy">
+        <service-call name="wf.flowable.WorkflowServices.get#ProcessDefinition"/>
+        <service-call name="wf.flowable.WorkflowServices.deploy#ProcessDefinition"/>
+        <default-response url="."/>
+    </transition>
+    <transition name="suspend">
+        <service-call name="wf.flowable.WorkflowServices.suspend#ProcessDefinition"/>
+        <default-response url="."/>
+    </transition>
+    <transition name="activate">
+        <service-call name="wf.flowable.WorkflowServices.activate#ProcessDefinition"/>
+        <default-response url="."/>
+    </transition>
+
+    <actions>
+        <service-call name="wf.flowable.WorkflowServices.list#ProcessDefinitions" out-map="context"/>
+    </actions>
+    <widgets>
+        <label text="Process Definitions" type="h4"/>
+        <link url="../Designer" text="Open Designer" link-type="anchor"/>
+        <form-list name="DefinitionList" list="processDefinitionList" skip-form="true">
+            <field name="processDefinitionKey"><default-field title="Key">
+                <link url="../Designer" text="${processDefinitionKey}" link-type="anchor">
+                    <parameter name="processDefinitionKey"/>
+                </link>
+            </default-field></field>
+            <field name="processName"><default-field title="Name"><display/></default-field></field>
+            <field name="statusId"><default-field title="Status"><display/></default-field></field>
+            <field name="deploymentId"><default-field title="Deployment"><display/></default-field></field>
+            <field name="deploy"><default-field title="">
+                <link url="deploy" text="Deploy">
+                    <parameter name="processDefinitionKey"/>
+                </link>
+            </default-field></field>
+            <field name="suspend"><default-field title="">
+                <link url="suspend" text="Suspend">
+                    <parameter name="processDefinitionKey"/>
+                </link>
+            </default-field></field>
+            <field name="activate"><default-field title="">
+                <link url="activate" text="Activate">
+                    <parameter name="processDefinitionKey"/>
+                </link>
+            </default-field></field>
+        </form-list>
+    </widgets>
+</screen>

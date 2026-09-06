@@ -1,0 +1,48 @@
+{
+  "name": "Flowable",
+  "uri": "http://flowable.org/bpmn",
+  "prefix": "flowable",
+  "xml": { "tagAlias": "lowerCase" },
+  "associations": [],
+  "types": [
+    {
+      "name": "ServiceTask",
+      "isAbstract": true,
+      "extends": ["bpmn:ServiceTask"],
+      "properties": [
+        { "name": "delegateExpression", "isAttr": true, "type": "String" },
+        { "name": "async", "isAttr": true, "type": "Boolean" }
+      ]
+    },
+    {
+      "name": "UserTask",
+      "isAbstract": true,
+      "extends": ["bpmn:UserTask"],
+      "properties": [
+        { "name": "formKey", "isAttr": true, "type": "String" },
+        { "name": "assignee", "isAttr": true, "type": "String" },
+        { "name": "candidateUsers", "isAttr": true, "type": "String" },
+        { "name": "candidateGroups", "isAttr": true, "type": "String" }
+      ]
+    },
+    {
+      "name": "Field",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:ServiceTask", "bpmn:UserTask"] },
+      "properties": [
+        { "name": "name", "isAttr": true, "type": "String" },
+        { "name": "stringValue", "isAttr": true, "type": "String" },
+        { "name": "string", "type": "String" }
+      ]
+    },
+    {
+      "name": "MultiInstanceLoopCharacteristics",
+      "isAbstract": true,
+      "extends": ["bpmn:MultiInstanceLoopCharacteristics"],
+      "properties": [
+        { "name": "collection", "isAttr": true, "type": "String" },
+        { "name": "elementVariable", "isAttr": true, "type": "String" }
+      ]
+    }
+  ]
+}

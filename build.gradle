@@ -1,0 +1,69 @@
+apply plugin: 'groovy'
+
+def componentNode = parseComponent(project)
+version = componentNode.'@version'
+def jarBaseName = componentNode.'@name'
+def moquiDir = projectDir.parentFile.parentFile.parentFile
+def frameworkDir = file(moquiDir.absolutePath + '/framework')
+
+repositories {
+    flatDir name: 'localLib', dirs: frameworkDir.absolutePath + '/lib'
+    mavenCentral()
+}
+
+tasks.withType(JavaCompile) { options.compilerArgs << "-proc:none" }
+tasks.withType(GroovyCompile) { options.compilerArgs << "-proc:none" }
+
+dependencies {
+    implementation project(':framework')
+    // Apache 2.0. Do not use Flowable 8.x (Jackson 3 / Spring Boot 4).
+    implementation 'org.flowable:flowable-engine:7.2.0'
+}
+
+check.dependsOn.clear()
+
+// Pin UMD/CSS. Do not run Vite/npm. flowable.json stays hand-maintained.
+def bpmnJsVersion = '17.11.1'
+def bpmnJsDir = file("${projectDir}/screen/static/bpmn-js")
+def jsdelivrBase = "https://cdn.jsdelivr.net/npm/bpmn-js@${bpmnJsVersion}/"
+def bpmnJsFiles = [
+    'dist/bpmn-modeler.production.min.js': 'bpmn-modeler.production.min.js',
+    'dist/bpmn-navigated-viewer.production.min.js': 'bpmn-navigated-viewer.production.min.js',
+    'dist/assets/bpmn-js.css': 'bpmn-js.css',
+    'dist/assets/diagram-js.css': 'diagram-js.css',
+    'dist/assets/bpmn-font/css/bpmn.css': 'bpmn.css',
+    'dist/assets/bpmn-font/font/bpmn.woff2': 'bpmn.woff2',
+    'dist/assets/bpmn-font/font/bpmn.woff': 'bpmn.woff',
+    'dist/assets/bpmn-font/font/bpmn.ttf': 'bpmn.ttf'
+]
+
+task downloadBpmnJs { doLast {
+    bpmnJsDir.mkdirs()
+    bpmnJsFiles.each { String sourcePath, String targetName ->
+        File targetFile = file("${bpmnJsDir}/${targetName}")
+        if (targetFile.exists()) return
+        String sourceUrl = jsdelivrBase + sourcePath
+        logger.lifecycle("Downloading ${sourceUrl} to ${targetFile.absolutePath}")
+        targetFile.getParentFile().mkdirs()
+        ant.get(src: sourceUrl, dest: targetFile)
+    }
+} }
+
+task cleanLib(type: Delete) { delete fileTree(dir: projectDir.absolutePath+'/lib', include: '*') }
+clean.dependsOn cleanLib
+
+jar {
+    destinationDirectory = file(projectDir.absolutePath + '/lib')
+    archiveBaseName = jarBaseName
+}
+task copyDependencies { doLast {
+    copy {
+        from (configurations.runtimeClasspath -
+              project(':framework').configurations.runtimeClasspath -
+              project(':framework').tasks.jar.archiveFile.get().asFile)
+        into file(projectDir.absolutePath + '/lib')
+    }
+} }
+copyDependencies.dependsOn cleanLib
+copyDependencies.dependsOn downloadBpmnJs
+jar.dependsOn copyDependencies
