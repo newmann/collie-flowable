@@ -1,8 +1,67 @@
 @font-face {
   font-family: 'bpmn';
-  src: url('/apps/collie-flowable/Asset?file=bpmn.woff2') format('woff2'),
-       url('/apps/collie-flowable/Asset?file=bpmn.woff') format('woff'),
-       url('/apps/collie-flowable/Asset?file=bpmn.ttf') format('truetype');
+  src: url('/apps/collie-flowable/Asset/get?file=bpmn.woff2') format('woff2'),
+       url('/apps/collie-flowable/Asset/get?file=bpmn.woff') format('woff'),
+       url('/apps/collie-flowable/Asset/get?file=bpmn.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
+}
+
+/* container@style is a CSS class in qapps/qapps2, not inline CSS */
+#wf-bpmn-canvas,
+#wf-bpmn-canvas-qvue {
+  height: calc(100vh - 240px);
+  min-height: 480px;
+  border: 1px solid #ccc;
+  position: relative;
+}
+.q-dialog .q-card:has(#wf-monitor-canvas) {
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+.q-dialog .q-card:has(#wf-monitor-canvas) > .q-card-section {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.q-dialog .q-card:has(#wf-monitor-canvas) > .q-card-section > * {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+#wf-monitor-canvas {
+  flex: 1 1 auto;
+  min-height: 280px;
+  height: calc(90vh - 140px);
+  border: 1px solid #ccc;
+  position: relative;
+}
+#wf-monitor-canvas .highlight:not(.djs-connection) .djs-visual > :nth-child(1) {
+  fill: rgba(255, 206, 86, 0.35) !important;
+  stroke: #f0ad4e !important;
+}
+#wf-monitor-canvas .highlight-completed:not(.djs-connection) .djs-visual > :nth-child(1) {
+  fill: rgba(40, 167, 69, 0.25) !important;
+  stroke: #28a745 !important;
+}
+#wf-monitor-canvas .highlight-completed.djs-connection .djs-visual path {
+  stroke: #28a745 !important;
+  stroke-width: 3px !important;
+}
+#wf-monitor-canvas .highlight-completed.djs-connection marker path {
+  fill: #28a745 !important;
+  stroke: #28a745 !important;
+}
+#wf-bpmn-canvas .bjs-container,
+#wf-bpmn-canvas .djs-container,
+#wf-monitor-canvas .bjs-container,
+#wf-monitor-canvas .djs-container,
+#wf-bpmn-canvas-qvue .bjs-container,
+#wf-bpmn-canvas-qvue .djs-container {
+  width: 100%;
+  height: 100%;
 }

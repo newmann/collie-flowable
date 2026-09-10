@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:flowable="http://flowable.org/bpmn"
+        xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+        xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+        xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+        targetNamespace="http://moqui.org/flowable"
+        id="demoMessageDefinitions">
+    <message id="wfDemoPaidMessage" name="wfDemoPaid"/>
+    <process id="demoMessage" name="Demo Message Wait" isExecutable="true">
+        <startEvent id="start" name="Start"/>
+        <sequenceFlow id="toWait" sourceRef="start" targetRef="waitPaid"/>
+        <intermediateCatchEvent id="waitPaid" name="Wait paid">
+            <messageEventDefinition messageRef="wfDemoPaidMessage"/>
+        </intermediateCatchEvent>
+        <sequenceFlow id="toEnd" sourceRef="waitPaid" targetRef="end"/>
+        <endEvent id="end" name="End"/>
+    </process>
+    <bpmndi:BPMNDiagram id="BPMNDiagram_demoMessage">
+        <bpmndi:BPMNPlane id="BPMNPlane_demoMessage" bpmnElement="demoMessage">
+            <bpmndi:BPMNShape id="start_di" bpmnElement="start"><dc:Bounds x="152" y="162" width="36" height="36"/></bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="waitPaid_di" bpmnElement="waitPaid"><dc:Bounds x="280" y="154" width="36" height="36"/></bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="end_di" bpmnElement="end"><dc:Bounds x="420" y="162" width="36" height="36"/></bpmndi:BPMNShape>
+            <bpmndi:BPMNEdge id="toWait_di" bpmnElement="toWait"><di:waypoint x="188" y="180"/><di:waypoint x="280" y="172"/></bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="toEnd_di" bpmnElement="toEnd"><di:waypoint x="316" y="172"/><di:waypoint x="420" y="180"/></bpmndi:BPMNEdge>
+        </bpmndi:BPMNPlane>
+    </bpmndi:BPMNDiagram>
+</definitions>

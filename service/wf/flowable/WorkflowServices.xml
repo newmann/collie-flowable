@@ -27,6 +27,21 @@
         </actions>
     </service>
 
+    <service verb="create" noun="ProcessDefinition" authenticate="true">
+        <in-parameters>
+            <parameter name="processDefinitionKey" required="true"/>
+            <parameter name="processName" required="true"/>
+            <parameter name="description"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="processDefinitionKey"/>
+            <parameter name="statusId"/>
+        </out-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.createProcessDefinition(ec, context)</script>
+        </actions>
+    </service>
+
     <service verb="save" noun="ProcessDefinition" authenticate="true">
         <in-parameters>
             <parameter name="processDefinitionKey" required="true"/>
@@ -41,6 +56,23 @@
         </actions>
     </service>
 
+    <service verb="update" noun="ProcessDefinitionMeta" authenticate="true">
+        <in-parameters>
+            <parameter name="processDefinitionKey" required="true"/>
+            <parameter name="processName"/>
+            <parameter name="description"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="processDefinitionKey"/>
+            <parameter name="processName"/>
+            <parameter name="description"/>
+            <parameter name="statusId"/>
+        </out-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.updateProcessDefinitionMeta(ec, context)</script>
+        </actions>
+    </service>
+
     <service verb="get" noun="ProcessDefinition" authenticate="true">
         <in-parameters>
             <parameter name="processDefinitionKey" required="true"/>
@@ -48,6 +80,7 @@
         <out-parameters>
             <parameter name="processDefinitionKey"/>
             <parameter name="processName"/>
+            <parameter name="description"/>
             <parameter name="bpmnXml"/>
             <parameter name="statusId"/>
             <parameter name="deploymentId"/>
@@ -88,6 +121,7 @@
         <in-parameters>
             <parameter name="processInstanceId"/>
             <parameter name="businessKey"/>
+            <parameter name="taskId"/>
         </in-parameters>
         <out-parameters>
             <parameter name="processInstanceId"/>
@@ -97,11 +131,17 @@
             <parameter name="status"/>
             <parameter name="startUserId"/>
             <parameter name="currentActivities" type="List"/>
+            <parameter name="completedActivities" type="List"/>
+            <parameter name="completedFlows" type="List"/>
             <parameter name="currentTasks" type="List"/>
             <parameter name="latestFormKey"/>
             <parameter name="endTime"/>
             <parameter name="businessWithdrawService"/>
             <parameter name="businessCancelService"/>
+            <parameter name="canWithdraw" type="Boolean"/>
+            <parameter name="canCancel" type="Boolean"/>
+            <parameter name="finishedUserTaskCount" type="Integer"/>
+            <parameter name="visitedUserTasks" type="List"/>
         </out-parameters>
         <actions>
             <script>wf.flowable.WorkflowSupport.getProcessInstance(ec, context)</script>
@@ -214,11 +254,61 @@
     </service>
 
     <service verb="list" noun="ProcessInstances" authenticate="true">
+        <in-parameters>
+            <parameter name="processInstanceId"/>
+            <parameter name="pageSize" type="Integer"/>
+        </in-parameters>
         <out-parameters>
             <parameter name="instanceList" type="List"/>
         </out-parameters>
         <actions>
             <script>wf.flowable.WorkflowSupport.listProcessInstances(ec, context)</script>
+        </actions>
+    </service>
+
+    <service verb="addSign" noun="Task" authenticate="true">
+        <in-parameters>
+            <parameter name="taskId" required="true"/>
+            <parameter name="toUserId" required="true"/>
+            <parameter name="comment"/>
+        </in-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.addSignTask(ec, context)</script>
+        </actions>
+    </service>
+
+    <service verb="returnTo" noun="Task" authenticate="true">
+        <in-parameters>
+            <parameter name="taskId" required="true"/>
+            <parameter name="targetActivityId" required="true"/>
+            <parameter name="comment"/>
+        </in-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.returnToTask(ec, context)</script>
+        </actions>
+    </service>
+
+    <service verb="message" noun="Process" authenticate="true">
+        <in-parameters>
+            <parameter name="processInstanceId"/>
+            <parameter name="businessKey"/>
+            <parameter name="messageName" required="true"/>
+            <parameter name="variables" type="Map"/>
+        </in-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.messageProcess(ec, context)</script>
+        </actions>
+    </service>
+
+    <service verb="signal" noun="Process" authenticate="true">
+        <in-parameters>
+            <parameter name="processInstanceId"/>
+            <parameter name="businessKey"/>
+            <parameter name="signalName" required="true"/>
+            <parameter name="variables" type="Map"/>
+        </in-parameters>
+        <actions>
+            <script>wf.flowable.WorkflowSupport.signalProcess(ec, context)</script>
         </actions>
     </service>
 

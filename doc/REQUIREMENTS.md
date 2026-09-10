@@ -154,7 +154,7 @@ wf.flowable.* 服务 ──► FlowableToolFactory ──► ProcessEngine ─�
 | CF-11 | 服务出参写回 variables，供网关条件使用 |
 | CF-12 | `ec.message.hasError()` 时抛错，由 Flowable 重试或 error boundary 处理 |
 | CF-13 | `start#Process`：`processDefinitionKey` + `businessKey`（业务主键）+ variables。组件内写 `WfProcessLink`（W4）；发现进行中的同键 link 则拒绝，不靠业务自己判断（CF-24） |
-| CF-14 | `signal#Process` / `message#Process`：等待外部系统或线下结果。挂到 **以后**（W5 之后），第一期不实现 |
+| CF-14 | `signal#Process` / `message#Process`：按实例投递，唤醒等待中的 Message / Signal 捕获（含边界）。W8 必做。不做相关键（correlation key）UI |
 | CF-15 | `complete#Task` **只做**：鉴权（当前用户必须是 **assignee**；候选须先 `claim#`，见 CF-37）→ 写 `WfTaskComment` → 写**节点局部** outcome（CF-26）→ `task.complete`。必收 `outcome`（`approve` / `reject` / `return`），选收 `comment`。**默认不调**业务 `approve#` / `reject#`。业务失败要任务保持打开时，用该 UserTask 上**可选**的「完成时同步服务」（按 outcome 各绑一个，CF-46 / CF-66）；会签 / 并行节点不绑。改 `statusId` 画在网关之后的 Service Task（CF-22 / CF-62） |
 | CF-16 | `list#MyTasks`：按 `ec.user.userId` 与 `ec.user.userGroupIdSet` 查指派与候选任务 |
 | CF-17 | 启动流程优先由业务服务或 SECA（如 `tx-commit`）调用 `start#Process`，不在 entity-auto 里塞引擎 |
@@ -182,14 +182,14 @@ wf.flowable.* 服务 ──► FlowableToolFactory ──► ProcessEngine ─�
 | CF-30 | 不启用 Flowable 自带用户库作为账号源 |
 | CF-31 | `assignee` / `candidateUsers` = `UserAccount.userId`（全程 userId，不用 username） |
 | CF-32 | `candidateGroups` = `UserGroup.userGroupId` |
-| CF-33 | 认领 / 完成另受 `ec.user.isInGroup`、`hasPermission` 与 ArtifactAuthz 约束 |
+| CF-33 | 认领 / 完成另受候选组（`ec.user.isInGroup` / `userGroupIdSet`）与 ArtifactAuthz 约束。不另做一套 `hasPermission` 权限模型 |
 | CF-34 | 待办是本组件 Moqui screen，数据来自 Flowable `TaskService`，不查 WorkEffort |
 | CF-35 | 第一期 **不** 与 WorkEffort 双写。SimpleScreens「我的任务」继续只管项目任务 |
 | CF-36 | UserTask 创建时用 `TaskListener` 发已有 `NotificationTopic`（如 `WorkflowTask`），接收人为 assignee 或候选组成员；不另做站内信。催办不另做按钮，W5 可用 Timer 路径 + 本通知 |
 | CF-37 | W4：`claim#Task` / `unclaim#Task`。候选用户或候选组成员认领后成为 assignee。**未认领的候选任务不能 `complete#`**。已是 assignee 的任务无需再认领 |
 | CF-38 | W4：`list#CompletedTasks`（我已办）、`list#MyStarted`（我发起的，按 `startUserId` = `ec.user.userId`） |
 
-第一期**不做**组织选人解析器（上级、角色、部门经理）。`${initiatorUserId}` / `${managerUserId}` 等由业务 `start#` 传入 variables。
+W6 起组织选人解析器（CF-80）。仍允许 `${initiatorUserId}` / `${managerUserId}` 由业务 `start#` 传入。不启用 Flowable IDM。
 
 ### 7.5 屏幕与表单
 
@@ -242,10 +242,10 @@ wf.flowable.* 服务 ──► FlowableToolFactory ──► ProcessEngine ─�
 
 | ID | 需求 |
 |----|------|
-| CF-45 | 管理员在本组件 Moqui 屏幕画 BPMN。W2 节点：Start / UserTask / Service Task / XOR / AND / End（W2 可画 AND，W4 即可跑并行汇合）。W5 加 Timer 与 multi-instance（会签）。产出可被 Flowable 部署的 BPMN 2.0 XML。不自研画布引擎，不嵌入 Flowable UI |
-| CF-46 | 属性面板绑定 Moqui 真相，写入 `flowable:` 扩展：Service Task → 已注册服务全名；UserTask `formKey` → `component://` 屏幕路径（每个 UserTask 独立选，允许互不相同，CF-41a）；`assignee` / `candidateUsers` → `userId`；`candidateGroups` → `userGroupId`。允许 `${var}`。W4：UserTask **可选**「完成时同步服务」（按 `approve` / `reject` / `return` 各选一个已注册服务全名）；不填则 `complete#` 不调业务服务。W5：会签节点可配 `collection` / `completionCondition` |
+| CF-45 | 管理员在本组件 Moqui 屏幕画 BPMN。W2 节点：Start / UserTask / Service Task / XOR / AND / End（W2 可画 AND，W4 即可跑并行汇合）。W5 加 Timer 与 multi-instance（会签）。W8 加 Call Activity 与 Message / Signal 捕获（含边界）。调色板禁止子流程展开、数据对象、Participant。产出可被 Flowable 部署的 BPMN 2.0 XML。不自研画布引擎，不嵌入 Flowable UI |
+| CF-46 | 属性面板绑定 Moqui 真相，写入 `flowable:` 扩展：Service Task → 已注册服务全名；UserTask `formKey` → `component://` 屏幕路径（每个 UserTask 独立选，允许互不相同，CF-41a）；`assignee` / `candidateUsers` → `userId` 或选人 token（CF-80）；`candidateGroups` → `userGroupId`。允许 `${var}`。W4：UserTask **可选**「完成时同步服务」（按 `approve` / `reject` / `return` 各选一个已注册服务全名）；不填则 `complete#` 不调业务服务。W5：会签节点可配 `collection` / `completionCondition`。W6：UserTask 可选「允许加签」。W8：Call Activity `calledElement` = 已部署 key |
 | CF-47 | 设计稿存本组件实体（草稿 / 已部署）。保存不自动部署；部署走 `deploy#ProcessDefinition` |
-| CF-47a | W2 起 `deploy#` 做最小校验：孤立节点、UserTask 缺 `formKey`、Service Task 缺 `serviceName` 则拒绝部署 |
+| CF-47a | W2 起 `deploy#` 做最小校验：孤立节点、UserTask 缺 `formKey`、Service Task 缺 `serviceName` 则拒绝部署。W8：Call Activity 缺 `calledElement`、Message/Signal 捕获缺名称、Call Activity 循环调用则拒绝 |
 | CF-48 | 应用根 `/qapps/collie-flowable/`（`AT_XML_SCREEN`，默认 `ADMIN`）。设计器、定义列表、W5 监控仅管理员；待办 / 已办 / 我发起 / 实例详情另受任务指派或发起人约束（CF-33 / CF-63）。第一期不挂 Marble |
 | CF-49 | 第三方画布若许可要求署名 / 水印，允许出现在**设计器页**和 **W5 管理员监控页**；不得出现在待办、已办、我发起、实例详情或业务表单 |
 
@@ -263,7 +263,7 @@ wf.flowable.* 服务 ──► FlowableToolFactory ──► ProcessEngine ─�
 | ID | 需求 |
 |----|------|
 | CF-60 | 不把 UserTask `outcome` / `comment` 做成各业务实体字段，也不改业务 `form-single` 来收意见。业务 `approve#` / `reject#` / `update#` 只改单据状态与业务副作用（CF-22） |
-| CF-61 | 薄实体（如 `WfTaskComment`）：`taskId` + `processInstanceId` + `nodeId` + `userId` + `outcome` + `comment` + 时间，并可挂 `businessKey`。字段写死在 [TECHNICAL.md](TECHNICAL.md)。W4 必做。`outcome` 枚举：`approve` / `reject` / `return` / `transfer` / `withdraw` / `cancel`。后三个只进意见表，**不**写网关变量（W5 操作面才产生） |
+| CF-61 | 薄实体（如 `WfTaskComment`）：`taskId` + `processInstanceId` + `nodeId` + `userId` + `outcome` + `comment` + 时间，并可挂 `businessKey`。字段写死在 [TECHNICAL.md](TECHNICAL.md)。W4 必做。`outcome` 枚举：`approve` / `reject` / `return` / `transfer` / `withdraw` / `cancel` / `addSign` / `returnTo`。`transfer` / `withdraw` / `cancel` / `addSign` / `returnTo` 只进意见表，**不**写网关变量 |
 | CF-62 | `complete#Task` 是任务收口：记意见 + 写局部 outcome + 推进 token。**不**在 complete 内默认调 `approve#`。不另提供一套与单据无关、替代 `approve#` 的「通用审批业务服务」。改状态用网关后 Service Task（或 UserTask 可选完成时同步服务，CF-15 / CF-66） |
 | CF-63 | `list#TaskComments`：按 `processInstanceId` 或 `businessKey` 查时间线。仅实例参与者、发起人（`startUserId`）或 `ADMIN` 可查，供待办与实例详情只读展示 |
 | CF-64 | 不用 Flowable `TaskService.addComment` / 引擎评论表当产品意见库（与 CF-50 一致：`ACT_*` 不映射 entity，也不当审计意见源） |
@@ -276,7 +276,8 @@ wf.flowable.* 服务 ──► FlowableToolFactory ──► ProcessEngine ─�
 
 | 说法 | 谁做 | 做什么 | 服务 |
 |------|------|--------|------|
-| **创建 / 保存** | 管理员 | 画 BPMN，写成草稿 | `wf.flowable.WorkflowServices.save#ProcessDefinition` |
+| **创建** | 管理员 | 在定义列表新建草稿行（空 BPMN） | `wf.flowable.WorkflowServices.create#ProcessDefinition` |
+| **保存** | 管理员 | 设计器写 BPMN 草稿 | `wf.flowable.WorkflowServices.save#ProcessDefinition` |
 | **发布 / 部署** | 管理员 | 把 BPMN 交给 Flowable，之后才能被启动 | `wf.flowable.WorkflowServices.deploy#ProcessDefinition` |
 | **启动实例** | 业务 `submit#` 或它的 SECA | 单据已有主键且已迁到审批中之后，开一条运行中的实例 | `wf.flowable.WorkflowServices.start#Process`（组件内写 `WfProcessLink`） |
 
@@ -284,8 +285,8 @@ wf.flowable.* 服务 ──► FlowableToolFactory ──► ProcessEngine ─�
 
 **管理员如何创建并发布（本组件屏）：**
 
-1. 打开 `/qapps/collie-flowable/`（默认 `ADMIN`）。设计器：`/qapps/collie-flowable/Designer`（W2）。
-2. 画 W2 节点（Start / UserTask / Service Task / XOR / AND / End）。属性面板绑 Moqui 真相（CF-46）：Process `id` = `processDefinitionKey`（创建后只读）；UserTask 独立选 `formKey`、`assignee` / `candidateUsers`（`userId`）、`candidateGroups`（`userGroupId`）；Service Task 选已注册服务全名。W4 起 UserTask 可选完成时同步服务。
+1. 打开 `/qapps/collie-flowable/ProcessList`（默认 `ADMIN`）。点 **New Process**，填 `processDefinitionKey` 与名称，调用 `create#ProcessDefinition` 写入草稿行（空 Start→End BPMN）。**不部署。** 设计器不出现在菜单里。
+2. 在列表点击 `processDefinitionKey` 进入 `/qapps/collie-flowable/Designer?processDefinitionKey=…`。画 W2 节点（Start / UserTask / Service Task / XOR / AND / End）。属性面板绑 Moqui 真相（CF-46）：Process `id` = `processDefinitionKey`（创建后只读）；UserTask 独立选 `formKey`、`assignee` / `candidateUsers`（`userId`）、`candidateGroups`（`userGroupId`）；Service Task 选已注册服务全名。W4 起 UserTask 可选完成时同步服务。
 3. 保存 → `save#ProcessDefinition`，只写 `WfProcessDefinition`（草稿）。**不部署。**
 4. 再点部署 → `deploy#ProcessDefinition`（先过 CF-47a 校验）。资源名必须是 `*.bpmn20.xml`（或 `.bpmn`），否则引擎不注册定义。发布后 `statusId` 为已部署，记下 `deploymentId`。
 
@@ -326,17 +327,21 @@ wf.flowable.* 服务 ──► FlowableToolFactory ──► ProcessEngine ─�
 
 ### 7.10 运行期操作面
 
-W4 补齐待办闭环；W5 补撤回 / 转办 / 作废 / 监控。`transfer` / `withdraw` / `cancel` 只写 `WfTaskComment`，不写网关 outcome 变量。
+W4 补齐待办闭环；W5 补撤回 / 转办 / 作废 / 监控。W6 加组织选人与加签；W7 驳回指定节点；W8 子流程与消息/信号。`transfer` / `withdraw` / `cancel` / `addSign` / `returnTo` 只写 `WfTaskComment`，不写网关 outcome 变量。
 
 | ID | 波次 | 需求 |
 |----|------|------|
-| CF-70 | W4 | 实例详情屏 `InstanceDetail`：按实例或 `businessKey` 展示时间线 + 该节点（或最近节点）`formKey` 业务屏；**不**加载 bpmn-js |
-| CF-71 | W5 | `cancel#Process`（作废）：先调业务作废服务迁 StatusFlow 终态，再 `deleteProcessInstance`；意见 `outcome=cancel`。管理员可作废；业务是否允许申请人作废由业务服务鉴权 |
-| CF-72 | W5 | `withdraw#Process`（撤回）：仅发起人，且**尚无任何 UserTask 完成**；先调业务服务迁回草稿，再删实例；意见 `outcome=withdraw` |
+| CF-70 | W4 | 实例详情屏 `InstanceDetail`：按实例或 `businessKey` 展示时间线 + 该节点（或最近节点）`formKey` 业务屏；**不**加载 bpmn-js。W5.1 起 Complete / Transfer 只在此屏，待办列表不绕过业务屏完成 |
+| CF-71 | W5 | `cancel#Process`（作废）：先调业务作废服务迁 StatusFlow 终态，再 `deleteProcessInstance`；意见 `outcome=cancel`。管理员可作废；业务是否允许申请人作废由业务服务鉴权。W5.1：屏上仅 ADMIN 或发起人显示作废 |
+| CF-72 | W5 | `withdraw#Process`（撤回）：仅发起人，且**尚无任何 UserTask 完成**；先调业务服务迁回草稿，再删实例；意见 `outcome=withdraw`。W5.1：屏上仅满足该条件时显示撤回 |
 | CF-73 | W5 | `transfer#Task`（转办）：`setAssignee`；意见 `outcome=transfer`；任务保持打开，不推进 token |
 | CF-74 | W5 | `list#ProcessInstances` + 管理员监控列表；只读高亮当前节点，可加载 bpmn-js（CF-49） |
 | CF-75 | W5 | `suspend#ProcessDefinition` / `activate#ProcessDefinition`。停用后禁止新 `start#`，旧实例继续 |
 | CF-78 | W5 | **或签** = 候选用户/组 + 一人认领完成。**会签** = multi-instance + 完成条件（全过 / 一票否决）。设计器要能配 `collection` / `completionCondition` |
+| CF-80 | W6 | 组织选人：UserTask 创建时 TaskListener 解析 token 并 `setAssignee` / 加候选。token：`initiator`、`managerOfInitiator`、`managerOfAssignee`、`role:{roleTypeId}`。经理读 `PartyRelationship`（`PrtManager`，from=经理、to=下属）+ `UserAccount.partyId`。角色读 `PartyRole`。禁止 Flowable IDM |
+| CF-81 | W6 | `addSign#Task`：仅当前打开的 UserTask、节点标了允许加签、当前用户是 assignee。创建 sibling 子任务（`parentTaskId`），不推进 token。意见 `outcome=addSign`。任一人 `complete#` 推进 token 并删除其余加签子任务。会签 / 并行节点拒绝加签。不做减签 / 委派 / 抄送 |
+| CF-82 | W7 | `returnTo#Task`：`taskId` + `targetActivityId` + `comment`。仅 assignee；目标必须是本实例**已经过的 UserTask**。用 `ChangeActivityStateBuilder`。意见 `outcome=returnTo`，不写网关变量。并行 / 会签（多 token）拒绝，提示走 BPMN 回退边。与 W4 的 `return`（CF-65）并存 |
+| CF-83 | W8 | Call Activity：`calledElement` = 已部署 `processDefinitionKey`；子实例 `businessKey` 继承父；写自己的 `WfProcessLink`（同 `entityName`/`pkValue`，不同 key）。部署校验禁止循环调用 |
 
 ## 8. 与现有能力的边界（用谁）
 
@@ -353,8 +358,11 @@ W4 补齐待办闭环；W5 补撤回 / 转办 / 作废 / 监控。`transfer` / `
 | 单据上的申请备注、附件、业务字段 | 既有业务实体 + 各节点 `formKey` 指向的 `form-single`（可不同屏、同一张单），不进本组件 |
 | 可视化改流程图（不靠发版改服务 XML） | 本组件设计器 + `deploy#` |
 | 业务单据提交后开流程实例 | 本地业务组件的 `submit#` 或 SECA 调本组件 `start#`（§7.9）；不是本组件内置发起台，也不改 mantle |
-| 认领、已办、我发起、实例详情 | 本组件 W4 |
+| 认领、已办、我发起、实例详情 | 本组件 W4（W5.1：完成只在实例详情） |
 | 撤回、转办、作废、定义挂起、实例监控 | 本组件 W5 |
+| 组织选人、加签 | 本组件 W6 |
+| 驳回指定节点 | 本组件 W7（与 W4 BPMN 回退边并存） |
+| 子流程、消息/信号等待 | 本组件 W8 |
 
 报销融合示例（实现时的验收故事，不是本组件内置业务）。顺序是 **先有单据主键，再有流程实例**（CF-18）：
 
@@ -397,16 +405,17 @@ W4 补齐待办闭环；W5 补撤回 / 转办 / 作废 / 监控。`transfer` / `
 - 第一期设计器不做协同编辑、不要求导入桌面工程一键转换（可粘贴 XML）
 - 不在 BPMN 里复制一份权限模型
 - 不自研 BPMN 引擎
+- 不做组织选人解析器以外的组织模型；不启用 Flowable IDM。W6 只解析 CF-80 token
+- 不做减签、委派、抄送、催办按钮、自由跳转、实例迁移
 - 不与 WorkEffort 双写（除非后续单独开一期，且已有统一 inbox 的产品理由）
 - 不用 Flowable Start Event 表单、不为 Start 配 `formKey` 来实现「启动即出单」（CF-18 / CF-42）
 - 不把「申请人填写」画成 Start 后第一个 UserTask 来凑启动表单（须先有单据再 `start#`）
 - 不把 UserTask 审批意见做成各业务实体字段，也不改业务 `form-single` 来收 `outcome` / `comment`（CF-60 / §7.8）
-- 第一期引擎不按节点做同一 `form-single` 的字段显隐 / 只读切换；节点展示差异只靠各 UserTask 的 `formKey`（CF-41a）。不为「换屏」去改引擎身份或另起一套 Flowable Form
+- 引擎不按节点做同一 `form-single` 的字段显隐 / 只读切换；节点展示差异只靠各 UserTask 的 `formKey`（CF-41a）
 - 不用 Flowable `TaskService.addComment` / 引擎评论表当产品意见库（CF-64）
-- 不做组织选人解析器（上级 / 角色 / 部门经理）；`${var}` 由业务 `start#` 传入
-- 不加签、减签、委派、抄送、催办按钮、自由跳转、驳回指定节点（`moveActivity`）、实例迁移、Call Activity、消息/信号（CF-14）
 - 不把「选任意实体绑流程」做成发起台（§7.9）
 - `complete#Task` 不默认调业务 `approve#` / `reject#`（CF-15 / CF-62）
+- 不上 JTA 同提交、独立 schema、多租户引擎隔离
 
 ## 11. 分期
 
@@ -420,7 +429,11 @@ W4 补齐待办闭环；W5 补撤回 / 转办 / 作废 / 监控。`transfer` / `
 | W3 | `MoquiServiceDelegate` +「服务任务→结束」 | 异步线程有 `ec`；变量名对入参 + `businessKey`；服务错误可重试；可用设计器画的图跑通 |
 | W4 | UserTask + 认领 + `list#MyTasks` / `list#CompletedTasks` / `list#MyStarted` + `complete#Task`（局部 outcome + `comment`）+ `formKey` 开业务屏 + 统一意见条 / 实例详情 + `NotificationTopic` + `WfProcessLink` + `WfTaskComment` + UserTask 可选完成时服务 | 候选须认领才能完成；待办点开**该节点** `formKey` 的 `form-single` 与意见条；至少两个 UserTask 绑不同屏、同一 `businessKey`（CF-41a）；`complete#` 后意见时间线与实例步骤一致；改状态来自网关后 Service Task（或可选完成时服务）；进行中 link 唯一，结束后可再 `start#` |
 | W5 | 会签多实例 + Timer + 撤回 / 转办 / 作废 + 定义挂起 + 管理员监控 | 或签 vs 会签路径；Timer 走出升级 UserTask（不自动改 assignee）；撤回（无已完成任务）/ 转办（任务仍打开）/ 作废（单据终态 + 实例删除）；停用定义后不能新 start |
-| 以后 | 加签、驳回指定节点、Call Activity、消息/信号、组织选人解析、WorkEffort 双写、JTA 同提交 | 须单独改本文范围 |
+| W5.1 | 第一期收口：待办完成路径、撤回/作废按钮条件、设计器节点白名单、回归测试 | 列表不能绕过业务屏 complete；仅发起人（无已办）见撤回；ServiceRun / Groovy 覆盖 link 唯一、未认领不能 complete、suspend 后不能 start |
+| W6 | 组织选人（CF-80）+ `addSign#Task`（CF-81） | token 解析后通知发给真实 userId；加签后任务仍开；任一人 complete 推进 token；会签/并行拒绝加签 |
+| W7 | `returnTo#Task`（CF-82） | 只能驳回到已经过的 UserTask；并行/会签拒绝；意见 `returnTo` 不写网关变量；与 BPMN `return` 边并存 |
+| W8 | Call Activity（CF-83）+ `message#` / `signal#`（CF-14） | 子流程结束后父继续；循环调用部署被拒；ServiceRun `message#` 唤醒等待节点 |
+| 以后 | 减签、委派、抄送、WorkEffort 双写、JTA 同提交、实例迁移 | 须单独改本文范围 |
 
 ## 12. 开放问题
 
@@ -435,9 +448,10 @@ W4 补齐待办闭环；W5 补撤回 / 转办 / 作废 / 监控。`transfer` / `
 7. **开流是业务侧定制**（§7.9）：本组件只提供 `save#` / `deploy#` / `start#`；每个单据类型在本地组件的 `submit#` 或 SECA 里自己接线（先 StatusFlow 再 `start#`）。不做通用「绑任意实体到流程定义」的发起台，不改 mantle 服务感知引擎。若要改成组件内置发起或改官方 `submit#`，先改 CF-17 / CF-18 / §7.9 / §8 / NFR-01。
 8. **`complete#` 不默认调 `approve#`**（CF-15 / CF-22 / CF-62 / CF-66）：改状态用网关后 Service Task；单人节点可选用完成时同步服务。若要改回「每个 complete 都调业务服务」，先改这些条目与 §8。
 9. **outcome 必须是 execution-local**（CF-26）。禁止只写进程级 `outcome`。
-10. **W4 的 `return` 靠 BPMN 回退边**（CF-65），不是引擎跳转。驳回指定节点仍属以后。
+10. **W4 的 `return` 靠 BPMN 回退边**（CF-65）。W7 的 `returnTo#` 是引擎跳转到已经过的 UserTask，二者并存。
 11. **`WfProcessLink` W4 必做**（CF-24）：进行中唯一；结束后可再 `start#`。`start#` 自己拒重复。
-12. **操作面分期**：认领 / 已办 / 我发起 / 实例详情在 W4；撤回 / 转办 / 作废 / 定义挂起 / 监控在 W5。
+12. **操作面分期**：认领 / 已办 / 我发起 / 实例详情在 W4；撤回 / 转办 / 作废 / 定义挂起 / 监控在 W5；组织选人 / 加签在 W6；驳回指定节点在 W7；Call Activity / 消息信号在 W8。
+13. **Phase2 运行期屏保证 `/qapps`**。`/qapps2` 的 qvue 设计器不作为验收路径。
 
 **仍开放（默认建议已写入 [TECHNICAL.md](TECHNICAL.md)，编码前按该文，不要另选）：**
 

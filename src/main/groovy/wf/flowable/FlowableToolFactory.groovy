@@ -53,8 +53,12 @@ class FlowableToolFactory implements ToolFactory<ProcessEngine> {
         config.setCustomPreCommandInterceptors([new MoquiJobCommandInterceptor(ecf)])
 
         processEngine = config.buildProcessEngine()
+        processEngine.runtimeService.addEventListener(new MoquiAssignmentListener(),
+                FlowableEngineEventType.TASK_CREATED)
         processEngine.runtimeService.addEventListener(new MoquiTaskNotificationListener(),
                 FlowableEngineEventType.TASK_CREATED)
+        processEngine.runtimeService.addEventListener(new MoquiCallActivityLinkListener(),
+                FlowableEngineEventType.PROCESS_STARTED)
         processEngine.runtimeService.addEventListener(new MoquiProcessEndListener(),
                 FlowableEngineEventType.PROCESS_COMPLETED, FlowableEngineEventType.PROCESS_CANCELLED)
 

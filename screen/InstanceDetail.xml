@@ -15,7 +15,37 @@
         <default-response url=".">
             <parameter name="processInstanceId"/>
             <parameter name="businessKey"/>
+        </default-response>
+    </transition>
+    <transition name="claim">
+        <service-call name="wf.flowable.WorkflowServices.claim#Task"/>
+        <default-response url=".">
+            <parameter name="processInstanceId"/>
+            <parameter name="businessKey"/>
             <parameter name="taskId"/>
+        </default-response>
+    </transition>
+    <transition name="transfer">
+        <service-call name="wf.flowable.WorkflowServices.transfer#Task"/>
+        <default-response url=".">
+            <parameter name="processInstanceId"/>
+            <parameter name="businessKey"/>
+            <parameter name="taskId"/>
+        </default-response>
+    </transition>
+    <transition name="addSign">
+        <service-call name="wf.flowable.WorkflowServices.addSign#Task"/>
+        <default-response url=".">
+            <parameter name="processInstanceId"/>
+            <parameter name="businessKey"/>
+            <parameter name="taskId"/>
+        </default-response>
+    </transition>
+    <transition name="returnTo">
+        <service-call name="wf.flowable.WorkflowServices.returnTo#Task"/>
+        <default-response url=".">
+            <parameter name="processInstanceId"/>
+            <parameter name="businessKey"/>
         </default-response>
     </transition>
     <transition name="withdraw">
@@ -31,6 +61,7 @@
         <service-call name="wf.flowable.WorkflowServices.get#ProcessInstance" out-map="instanceOut">
             <field-map field-name="processInstanceId" from="processInstanceId"/>
             <field-map field-name="businessKey" from="businessKey"/>
+            <field-map field-name="taskId" from="taskId"/>
         </service-call>
         <set field="instance" from="instanceOut"/>
         <set field="processInstanceId" from="instance.processInstanceId ?: processInstanceId"/>
@@ -43,6 +74,9 @@
             </service-call>
             <set field="commentList" from="commentOut.commentList"/>
         </if>
+        <service-call name="wf.flowable.DesignerServices.list#Users" out-map="userOut"/>
+        <set field="userList" from="userOut.userList ?: []"/>
+        <set field="openTasks" from="instance.currentTasks ?: []"/>
         <set field="currentTask" from="taskId ? instance.currentTasks?.find { it.taskId == taskId } : instance.currentTasks?.find { it.taskId }"/>
         <if condition="!taskId &amp;&amp; currentTask?.taskId">
             <set field="taskId" from="currentTask.taskId"/>
@@ -51,29 +85,104 @@
         <set field="requestId" from="businessKey"/>
         <set field="businessWithdrawService" from="businessWithdrawService ?: instance.businessWithdrawService"/>
         <set field="businessCancelService" from="businessCancelService ?: instance.businessCancelService"/>
-        <set field="canComplete" from="!ec.message.hasError() &amp;&amp; currentTask?.assignee == ec.user.userId"/>
+        <set field="visitedUserTasks" from="instance.visitedUserTasks ?: []"/>
+        <set field="canWithdraw" from="instance.canWithdraw"/>
+        <set field="canCancel" from="instance.canCancel"/>
     </actions>
     <widgets>
-        <label text="Instance ${instance.processInstanceId ?: ''}" type="h4"/>
-        <label text="Key ${instance.processDefinitionKey ?: ''}  status ${instance.status ?: ''}  businessKey ${instance.businessKey ?: ''}"/>
-        <container-box>
-            <box-header title="Task comment"/>
-            <box-body>
-                <form-single name="CompleteHere" transition="complete" condition="canComplete">
-                    <field name="taskId" from="taskId"><default-field title="Task Id"><hidden/></default-field></field>
-                    <field name="outcome"><default-field title="Outcome">
-                        <drop-down>
-                            <option key="approve" text="Approve"/>
-                            <option key="reject" text="Reject"/>
-                            <option key="return" text="Return"/>
-                        </drop-down>
+        <label text="Instance ${instance.processInstanceId ?: ''}" type="h3"/>
+        <label text="Process Number ${instance.processDefinitionKey ?: ''}  status ${instance.status ?: ''}  businessKey ${instance.businessKey ?: ''}"/>
+        <section name="OpenTaskSection" condition="openTasks &amp;&amp; openTasks.size() &gt; 0">
+            <widgets>
+                <label text="Open tasks" type="h5"/>
+                <form-list name="OpenTasks" list="openTasks" skip-form="true">
+                    <row-actions>
+                        <set field="canClaimRow" from="!assignee"/>
+                        <set field="canCompleteRow" from="assignee == ec.user.userId"/>
+                        <set field="canAddSignRow" from="canCompleteRow &amp;&amp; allowAddSign"/>
+                        <set field="canReturnToRow" from="canCompleteRow &amp;&amp; visitedUserTasks &amp;&amp; visitedUserTasks.size() &gt; 0"/>
+                    </row-actions>
+                    <field name="name"><default-field title="Task">
+                        <link url="." text="${name}" link-type="anchor">
+                            <parameter name="taskId"/>
+                            <parameter name="processInstanceId"/>
+                            <parameter name="businessKey"/>
+                        </link>
                     </default-field></field>
-                    <field name="comment"><default-field title="Comment"><text-area rows="3"/></default-field></field>
-                    <field name="submit"><default-field title="Complete"><submit/></default-field></field>
-                </form-single>
-                <label text="Claim the task first, or you are not the assignee." condition="!canComplete &amp;&amp; !ec.message.hasError()"/>
-            </box-body>
-        </container-box>
+                    <field name="assignee"><default-field title="Assignee"><display/></default-field></field>
+                    <field name="parentTaskId"><default-field title="Parent task"><display/></default-field></field>
+                    <field name="taskActions"><default-field title="Actions">
+                        <link url="claim" text="Claim" icon="fa fa-hand-paper-o" condition="canClaimRow">
+                            <parameter name="taskId"/>
+                            <parameter name="processInstanceId"/>
+                            <parameter name="businessKey"/>
+                        </link>
+                        <container-dialog id="CompleteDialog" button-text="Complete" icon="fa fa-check"
+                                condition="canCompleteRow" width="520">
+                            <form-single name="CompleteHere" transition="complete">
+                                <field name="taskId"><default-field title="Task Id"><hidden/></default-field></field>
+                                <field name="processInstanceId"><default-field><hidden/></default-field></field>
+                                <field name="businessKey"><default-field><hidden/></default-field></field>
+                                <field name="outcome"><default-field title="Outcome">
+                                    <drop-down>
+                                        <option key="approve" text="Approve"/>
+                                        <option key="reject" text="Reject"/>
+                                        <option key="return" text="Return"/>
+                                    </drop-down>
+                                </default-field></field>
+                                <field name="comment"><default-field title="Comment"><text-area rows="3"/></default-field></field>
+                                <field name="submit"><default-field title="Complete"><submit icon="fa fa-check"/></default-field></field>
+                            </form-single>
+                        </container-dialog>
+                        <container-dialog id="TransferDialog" button-text="Transfer" icon="fa fa-share"
+                                condition="canCompleteRow" width="520">
+                            <form-single name="TransferHere" transition="transfer">
+                                <field name="taskId"><default-field><hidden/></default-field></field>
+                                <field name="processInstanceId"><default-field><hidden/></default-field></field>
+                                <field name="businessKey"><default-field><hidden/></default-field></field>
+                                <field name="toUserId"><default-field title="To userId">
+                                    <drop-down allow-empty="true">
+                                        <list-options list="userList" key="${userId}" text="${userFullName ?: userId}"/>
+                                    </drop-down>
+                                </default-field></field>
+                                <field name="comment"><default-field title="Comment"><text-area rows="2"/></default-field></field>
+                                <field name="submit"><default-field title="Transfer"><submit icon="fa fa-share"/></default-field></field>
+                            </form-single>
+                        </container-dialog>
+                        <container-dialog id="AddSignDialog" button-text="Add sign" icon="fa fa-plus"
+                                condition="canAddSignRow" width="520">
+                            <form-single name="AddSignHere" transition="addSign">
+                                <field name="taskId"><default-field><hidden/></default-field></field>
+                                <field name="processInstanceId"><default-field><hidden/></default-field></field>
+                                <field name="businessKey"><default-field><hidden/></default-field></field>
+                                <field name="toUserId"><default-field title="Add-sign userId">
+                                    <drop-down allow-empty="true">
+                                        <list-options list="userList" key="${userId}" text="${userFullName ?: userId}"/>
+                                    </drop-down>
+                                </default-field></field>
+                                <field name="comment"><default-field title="Comment"><text-area rows="2"/></default-field></field>
+                                <field name="submit"><default-field title="Add sign"><submit icon="fa fa-plus"/></default-field></field>
+                            </form-single>
+                        </container-dialog>
+                        <container-dialog id="ReturnToDialog" button-text="Return to node" icon="fa fa-undo"
+                                condition="canReturnToRow" width="520">
+                            <form-single name="ReturnToHere" transition="returnTo">
+                                <field name="taskId"><default-field><hidden/></default-field></field>
+                                <field name="processInstanceId"><default-field><hidden/></default-field></field>
+                                <field name="businessKey"><default-field><hidden/></default-field></field>
+                                <field name="targetActivityId"><default-field title="Return to">
+                                    <drop-down>
+                                        <list-options list="visitedUserTasks" key="${activityId}" text="${name ?: activityId}"/>
+                                    </drop-down>
+                                </default-field></field>
+                                <field name="comment"><default-field title="Comment"><text-area rows="2"/></default-field></field>
+                                <field name="submit"><default-field title="Return to node"><submit icon="fa fa-undo"/></default-field></field>
+                            </form-single>
+                        </container-dialog>
+                    </default-field></field>
+                </form-list>
+            </widgets>
+        </section>
         <container-row>
             <row-col md="6">
                 <label text="Timeline" type="h5"/>
@@ -87,25 +196,29 @@
             </row-col>
             <row-col md="6">
                 <label text="Business form" type="h5"/>
-                <label text="${formKey ?: 'No formKey for this node'}"/>
-                <if condition="formKey &amp;&amp; !ec.message.hasError()">
-                    <include-screen location="${formKey}" share-scope="true"/>
-                </if>
+                <label text="No formKey for this node" condition="!formKey"/>
+                <section name="BusinessForm" condition="formKey &amp;&amp; !ec.message.hasError()">
+                    <widgets>
+                        <render-mode>
+                            <text type="any"><![CDATA[${sri.renderIncludeScreen(formKey, "true")}]]></text>
+                        </render-mode>
+                    </widgets>
+                </section>
             </row-col>
         </container-row>
-        <form-single name="WithdrawForm" transition="withdraw" condition="!ec.message.hasError()">
+        <form-single name="WithdrawForm" transition="withdraw" condition="canWithdraw">
             <field name="processInstanceId" from="processInstanceId"><default-field title="Instance"><hidden/></default-field></field>
             <field name="businessKey" from="businessKey"><default-field title="Business Key"><hidden/></default-field></field>
             <field name="businessWithdrawService" from="businessWithdrawService"><default-field title=""><hidden/></default-field></field>
             <field name="comment"><default-field title="Withdraw reason"><text-area rows="2"/></default-field></field>
-            <field name="submit"><default-field title="Withdraw"><submit/></default-field></field>
+            <field name="submit"><default-field title="Withdraw"><submit icon="fa fa-undo"/></default-field></field>
         </form-single>
-        <form-single name="CancelForm" transition="cancel" condition="!ec.message.hasError()">
+        <form-single name="CancelForm" transition="cancel" condition="canCancel">
             <field name="processInstanceId" from="processInstanceId"><default-field title="Instance"><hidden/></default-field></field>
             <field name="businessKey" from="businessKey"><default-field title="Business Key"><hidden/></default-field></field>
             <field name="businessCancelService" from="businessCancelService"><default-field title=""><hidden/></default-field></field>
             <field name="comment"><default-field title="Cancel reason"><text-area rows="2"/></default-field></field>
-            <field name="submit"><default-field title="Cancel"><submit/></default-field></field>
+            <field name="submit"><default-field title="Cancel"><submit icon="fa fa-times"/></default-field></field>
         </form-single>
     </widgets>
 </screen>

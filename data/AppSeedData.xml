@@ -23,7 +23,7 @@
             artifactName="component://collie-flowable/screen/Monitor.xml"/>
     <moqui.security.ArtifactGroup artifactGroupId="CF_ASSET" description="collie-flowable static assets"/>
     <moqui.security.ArtifactGroupMember artifactGroupId="CF_ASSET"
-            artifactTypeEnumId="AT_XML_SCREEN" inheritAuthz="N"
+            artifactTypeEnumId="AT_XML_SCREEN" inheritAuthz="Y"
             artifactName="component://collie-flowable/screen/Asset.xml"/>
     <moqui.security.ArtifactAuthz artifactAuthzId="CF_ASSET_ALL_USERS"
             userGroupId="ALL_USERS" artifactGroupId="CF_ASSET"

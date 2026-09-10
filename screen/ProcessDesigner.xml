@@ -1,165 +1,238 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <screen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/xml-screen-3.xsd"
-        default-menu-title="Designer" require-authentication="true">
+        default-menu-title="Process Designing" require-authentication="true">
 
     <parameter name="processDefinitionKey"/>
+
+    <pre-actions>
+        <script><![CDATA[
+            def listUrl = sri.buildUrl("../ProcessList").pathWithParams
+            if (!processDefinitionKey) sri.sendRedirectAndStopRender(listUrl)
+            boolean alreadyDisabled = ec.artifactExecution.disableAuthz()
+            try {
+                def existing = ec.entity.find("wf.flowable.WfProcessDefinition")
+                        .condition("processDefinitionKey", processDefinitionKey).one()
+                if (existing == null) sri.sendRedirectAndStopRender(listUrl)
+            } finally {
+                if (!alreadyDisabled) ec.artifactExecution.enableAuthz()
+            }
+        ]]></script>
+    </pre-actions>
 
     <transition name="getDefinition" method="post">
         <service-call name="wf.flowable.WorkflowServices.get#ProcessDefinition"/>
         <default-response type="none"/>
     </transition>
+    <transition name="updateMeta" method="post">
+        <service-call name="wf.flowable.WorkflowServices.update#ProcessDefinitionMeta"/>
+        <default-response url="."><parameter name="processDefinitionKey"/></default-response>
+        <error-response url="."><parameter name="processDefinitionKey"/></error-response>
+    </transition>
     <transition name="saveDefinition" method="post">
         <service-call name="wf.flowable.WorkflowServices.save#ProcessDefinition"/>
         <default-response url="."><parameter name="processDefinitionKey"/></default-response>
+        <error-response url="."><parameter name="processDefinitionKey"/></error-response>
     </transition>
     <transition name="deployDefinition" method="post">
         <service-call name="wf.flowable.WorkflowServices.deploy#ProcessDefinition"/>
         <default-response url="."><parameter name="processDefinitionKey"/></default-response>
+        <error-response url="."><parameter name="processDefinitionKey"/></error-response>
     </transition>
     <transition name="listServiceNames" method="post">
-        <service-call name="wf.flowable.DesignerServices.list#ServiceNames"/>
+        <service-call name="wf.flowable.DesignerServices.list#ServiceNames" web-send-json-response="true"/>
         <default-response type="none"/>
     </transition>
     <transition name="listScreenLocations" method="post">
-        <service-call name="wf.flowable.DesignerServices.list#ScreenLocations"/>
+        <service-call name="wf.flowable.DesignerServices.list#ScreenLocations" web-send-json-response="true"/>
         <default-response type="none"/>
     </transition>
     <transition name="listUsers" method="post">
-        <service-call name="wf.flowable.DesignerServices.list#Users"/>
+        <service-call name="wf.flowable.DesignerServices.list#Users" web-send-json-response="true"/>
         <default-response type="none"/>
     </transition>
     <transition name="listUserGroups" method="post">
-        <service-call name="wf.flowable.DesignerServices.list#UserGroups"/>
+        <service-call name="wf.flowable.DesignerServices.list#UserGroups" web-send-json-response="true"/>
+        <default-response type="none"/>
+    </transition>
+    <transition name="listProcessDefinitions" method="post">
+        <service-call name="wf.flowable.WorkflowServices.list#ProcessDefinitions" web-send-json-response="true"/>
         <default-response type="none"/>
     </transition>
 
     <actions>
-        <if condition="processDefinitionKey">
-            <service-call name="wf.flowable.WorkflowServices.get#ProcessDefinition" out-map="defnOut">
-                <field-map field-name="processDefinitionKey" from="processDefinitionKey"/>
-            </service-call>
-            <set field="processName" from="defnOut.processName"/>
-            <set field="bpmnXml" from="defnOut.bpmnXml"/>
-            <set field="statusId" from="defnOut.statusId"/>
-        </if>
+        <service-call name="wf.flowable.WorkflowServices.get#ProcessDefinition" out-map="defnOut">
+            <field-map field-name="processDefinitionKey" from="processDefinitionKey"/>
+        </service-call>
+        <set field="processName" from="defnOut.processName"/>
+        <set field="description" from="defnOut.description"/>
+        <set field="bpmnXml" from="defnOut.bpmnXml"/>
+        <set field="bpmnXmlEscaped" from="org.moqui.util.WebUtilities.encodeHtml((defnOut.bpmnXml ?: '') as String)"/>
+        <set field="statusId" from="defnOut.statusId"/>
     </actions>
     <widgets>
-        <label text="Process Designer" type="h4"/>
-        <label text="Select a node to edit Moqui properties. Save writes a draft; Deploy runs CF-47a. Keep the bpmn.io watermark visible." type="p"/>
+        <label text="${processName}" type="h3">
+        </label>
+        <label text="Status ${statusId ?: 'new'}" type="p"/>
+        <label text="Must open from the definition list with processDefinitionKey. Update Properties changes name and remarks. Save writes a diagram draft. Deploy runs CF-47a. Keep the bpmn.io watermark visible." type="p"/>
+        <container-dialog id="DesignerDeployDialog" button-text="Deploy Process" icon="fa fa-rocket">
+            <form-single name="DesignerDeploy" transition="deployDefinition">
+                <field name="processDefinitionKey" from="processDefinitionKey">
+                    <default-field title="Process Number"><hidden/></default-field>
+                </field>
+                <field name="processName" from="processName">
+                    <default-field title="Name"><hidden/></default-field>
+                </field>
+                <field name="bpmnXml" from="bpmnXml">
+                    <default-field title=""><hidden/></default-field>
+                </field>
+                <field name="deploy"><default-field title="Deploy"><submit/></default-field></field>
+            </form-single>
+        </container-dialog>
+            <container-dialog id="DesignerMetaDialog" button-text="Update Properties" icon="fa fa-pencil">
+                <form-single name="DesignerMeta" transition="updateMeta">
+                    <field name="processDefinitionKey" from="processDefinitionKey">
+                        <default-field title="Process Number"><display/></default-field>
+                    </field>
+                    <field name="processName" from="processName">
+                        <default-field title="Name"><text-line size="24"/></default-field>
+                    </field>
+                    <field name="description" from="description">
+                        <default-field title="Remarks"><text-area cols="60" rows="3" id="wf-meta-description"/></default-field>
+                    </field>
+                    <field name="update"><default-field title="Update"><submit icon="fa fa-save"/></default-field></field>
+                </form-single>
+            </container-dialog>
+
+        <!-- <container-dialog id="DesignerSaveDialog" button-text="Save Diagram" icon="fa fa-save"> -->
+            <form-single name="DesignerSave" transition="saveDefinition">
+                <field name="processDefinitionKey" from="processDefinitionKey">
+                    <default-field title=""><hidden/></default-field>
+                </field>
+                <field name="processName" from="processName">
+                    <default-field title=""><hidden/></default-field>
+                </field>
+                <field name="bpmnXml" from="bpmnXml">
+                    <default-field title=""><hidden/></default-field>
+                </field>
+                <field name="save"><default-field title="Save"><submit icon="fa fa-save"/></default-field></field>
+            </form-single>
+        <!-- </container-dialog> -->
+
+
         <container-row>
-            <row-col md="3">
-                <form-single name="DesignerMeta" transition="saveDefinition">
-                    <field name="processDefinitionKey" from="processDefinitionKey">
-                        <default-field title="Key"><text-line size="24" id="wf-meta-key"/></default-field>
-                    </field>
-                    <field name="processName" from="processName">
-                        <default-field title="Name"><text-line size="24" id="wf-meta-name"/></default-field>
-                    </field>
-                    <field name="bpmnXml" from="bpmnXml">
-                        <default-field title=""><hidden id="wf-save-xml"/></default-field>
-                    </field>
-                    <field name="save"><default-field title="Save Draft"><submit/></default-field></field>
-                </form-single>
-                <form-single name="DesignerDeploy" transition="deployDefinition">
-                    <field name="processDefinitionKey" from="processDefinitionKey">
-                        <default-field title="Key"><hidden/></default-field>
-                    </field>
-                    <field name="processName" from="processName">
-                        <default-field title="Name"><hidden/></default-field>
-                    </field>
-                    <field name="bpmnXml" from="bpmnXml">
-                        <default-field title=""><hidden/></default-field>
-                    </field>
-                    <field name="deploy"><default-field title="Deploy"><submit/></default-field></field>
-                </form-single>
-                <label text="Status ${statusId ?: 'new'}" type="p"/>
-                <container id="wf-prop-panel" style="margin-top:12px;padding:8px;border:1px solid #ccc;">
-                    <render-mode>
-                        <text type="html,qvt,vuet"><![CDATA[
-<p><b>Node</b> <span id="wf-prop-type"> </span></p>
-<div>Node id</div><input id="wf-prop-id" class="form-control" disabled="disabled"/>
-<div>Name</div><input id="wf-prop-name" class="form-control"/>
-<div id="wf-panel-user" style="display:none">
-  <div>formKey</div><input id="wf-prop-formKey" class="form-control" list="wf-dl-screens"/>
-  <div>assignee (userId or ${r"${var}"})</div><input id="wf-prop-assignee" class="form-control" list="wf-dl-users"/>
-  <div>candidateUsers</div><input id="wf-prop-candidateUsers" class="form-control" list="wf-dl-users"/>
-  <div>candidateGroups</div><input id="wf-prop-candidateGroups" class="form-control" list="wf-dl-groups"/>
-  <div>onApproveService</div><input id="wf-prop-onApprove" class="form-control" list="wf-dl-services"/>
-  <div>onRejectService</div><input id="wf-prop-onReject" class="form-control" list="wf-dl-services"/>
-  <div>onReturnService</div><input id="wf-prop-onReturn" class="form-control" list="wf-dl-services"/>
-</div>
-<div id="wf-panel-loop" style="display:none">
-  <div>collection</div><input id="wf-prop-collection" class="form-control" placeholder="approverList"/>
-  <div>elementVariable</div><input id="wf-prop-elementVar" class="form-control" placeholder="approver"/>
-  <div>completionCondition</div><input id="wf-prop-completion" class="form-control" placeholder="nrOfCompletedInstances == nrOfInstances"/>
-</div>
-<div id="wf-panel-service" style="display:none">
-  <div>serviceName</div><input id="wf-prop-serviceName" class="form-control" list="wf-dl-services"/>
-</div>
-<div id="wf-panel-flow" style="display:none">
-  <div>conditionExpression</div><input id="wf-prop-condition" class="form-control" placeholder="${r"${outcome == 'approve'}"}"/>
-</div>
-<div id="wf-panel-timer" style="display:none">
-  <div>timeDuration</div><input id="wf-prop-timer" class="form-control" placeholder="PT5M"/>
-</div>
-<datalist id="wf-dl-services"></datalist>
-<datalist id="wf-dl-screens"></datalist>
-<datalist id="wf-dl-users"></datalist>
-<datalist id="wf-dl-groups"></datalist>
-                        ]]></text>
-                    </render-mode>
-                </container>
-            </row-col>
             <row-col md="9">
-                <container id="wf-bpmn-canvas" style="height:640px;border:1px solid #ccc;position:relative;"/>
+                <container id="wf-bpmn-canvas"/>
                 <render-mode>
-                    <text type="html,qvt,vuet"><![CDATA[
-<textarea id="wf-existing-xml" style="display:none">${bpmnXml!}</textarea>
-                    ]]></text>
                     <text type="html"><![CDATA[
-<textarea id="wf-existing-xml" style="display:none">${bpmnXml!}</textarea>
-<link rel="stylesheet" href="/apps/collie-flowable/Asset?file=diagram-js.css"/>
-<link rel="stylesheet" href="/apps/collie-flowable/Asset?file=bpmn-js.css"/>
-<link rel="stylesheet" href="/apps/collie-flowable/Asset?file=bpmn.css"/>
-<link rel="stylesheet" href="/apps/collie-flowable/Asset?file=bpmn-font-fix.css"/>
-<script src="/apps/collie-flowable/Asset?file=bpmn-modeler.production.min.js"></script>
-<script src="/apps/collie-flowable/Asset?file=designer.js&amp;v=4"></script>
+<textarea id="wf-existing-xml" style="display:none">${bpmnXmlEscaped!}</textarea>
+<input type="hidden" id="wf-meta-key" value="${processDefinitionKey!}"/>
+<input type="hidden" id="wf-meta-name" value="${processName!}"/>
+<link rel="stylesheet" href="/apps/collie-flowable/Asset/get?file=diagram-js.css"/>
+<link rel="stylesheet" href="/apps/collie-flowable/Asset/get?file=bpmn-js.css"/>
+<link rel="stylesheet" href="/apps/collie-flowable/Asset/get?file=bpmn.css"/>
+<link rel="stylesheet" href="/apps/collie-flowable/Asset/get?file=bpmn-font-fix.css&amp;v=8"/>
+<link rel="stylesheet" href="/apps/collie-flowable/Asset/get?file=designer-panel.css&amp;v=10"/>
+<script src="/apps/collie-flowable/Asset/get?file=bpmn-modeler.production.min.js"></script>
+<script src="/apps/collie-flowable/Asset/get?file=designer.js&amp;v=19"></script>
 <script>
 (function () {
+  if (window.BpmnJS && window.BpmnJS.prototype && typeof window.BpmnJS.prototype.createDiagram === 'function') {
+    window.BpmnModeler = window.BpmnJS;
+  }
   wfInitDesigner({
     canvasId: 'wf-bpmn-canvas',
     existingXml: (document.getElementById('wf-existing-xml') || {}).value,
-    moddleUrl: '/apps/collie-flowable/Asset?file=flowable.json',
+    moddleUrl: '/apps/collie-flowable/Asset/get?file=flowable.json',
+    modelerUrl: '/apps/collie-flowable/Asset/get?file=bpmn-modeler.production.min.js',
     lookupBase: (window.location.pathname || '').replace(/\/$/, ''),
-    lockKey: !!(document.getElementById('wf-existing-xml') && document.getElementById('wf-existing-xml').value)
+    lockKey: true
   });
 })();
 </script>
                     ]]></text>
                     <text type="qvt,vuet"><![CDATA[
-<textarea id="wf-existing-xml" style="display:none">${bpmnXml!}</textarea>
-<m-stylesheet href="/apps/collie-flowable/Asset?file=diagram-js.css"></m-stylesheet>
-<m-stylesheet href="/apps/collie-flowable/Asset?file=bpmn-js.css"></m-stylesheet>
-<m-stylesheet href="/apps/collie-flowable/Asset?file=bpmn.css"></m-stylesheet>
-<m-stylesheet href="/apps/collie-flowable/Asset?file=bpmn-font-fix.css"></m-stylesheet>
-<m-script src="/apps/collie-flowable/Asset?file=bpmn-modeler.production.min.js"></m-script>
-<m-script src="/apps/collie-flowable/Asset?file=designer.js&amp;v=4"></m-script>
+<textarea id="wf-existing-xml" style="display:none">${bpmnXmlEscaped!}</textarea>
+<input type="hidden" id="wf-meta-key" value="${processDefinitionKey!}"/>
+<input type="hidden" id="wf-meta-name" value="${processName!}"/>
+<m-stylesheet href="/apps/collie-flowable/Asset/get?file=diagram-js.css"></m-stylesheet>
+<m-stylesheet href="/apps/collie-flowable/Asset/get?file=bpmn-js.css"></m-stylesheet>
+<m-stylesheet href="/apps/collie-flowable/Asset/get?file=bpmn.css"></m-stylesheet>
+<m-stylesheet href="/apps/collie-flowable/Asset/get?file=bpmn-font-fix.css&amp;v=8"></m-stylesheet>
+<m-stylesheet href="/apps/collie-flowable/Asset/get?file=designer-panel.css&amp;v=10"></m-stylesheet>
+<m-script src="/apps/collie-flowable/Asset/get?file=bpmn-modeler.production.min.js"></m-script>
+<m-script src="/apps/collie-flowable/Asset/get?file=designer.js&amp;v=19"></m-script>
 <m-script>
 (function () {
+  if (window.BpmnJS && window.BpmnJS.prototype && typeof window.BpmnJS.prototype.createDiagram === 'function') {
+    window.BpmnModeler = window.BpmnJS;
+  }
   wfInitDesigner({
     canvasId: 'wf-bpmn-canvas',
     existingXml: (document.getElementById('wf-existing-xml') || {}).value,
-    moddleUrl: '/apps/collie-flowable/Asset?file=flowable.json',
+    moddleUrl: '/apps/collie-flowable/Asset/get?file=flowable.json',
+    modelerUrl: '/apps/collie-flowable/Asset/get?file=bpmn-modeler.production.min.js',
     lookupBase: (window.location.pathname || '').replace(/\/$/, ''),
-    lockKey: !!(document.getElementById('wf-existing-xml') && document.getElementById('wf-existing-xml').value)
+    lockKey: true
   });
 })();
 </m-script>
                     ]]></text>
-                    <text type="qvue" location="component://collie-flowable/screen/ProcessDesigner.qvue"/>
                 </render-mode>
             </row-col>
+            <row-col md="3">
+
+                <container id="wf-prop-panel">
+                    <render-mode>
+                        <text type="html,qvt,vuet"><![CDATA[
+<p class="wf-prop-heading"><b>Node</b> <span id="wf-prop-type"> </span></p>
+<div class="wf-prop-label">Node id</div><input id="wf-prop-id" class="wf-prop-input" disabled="disabled"/>
+<div class="wf-prop-label">Name</div><input id="wf-prop-name" class="wf-prop-input"/>
+<div id="wf-panel-user" style="display:none">
+  <div class="wf-prop-label">formKey</div>
+  <div class="wf-combo"><div class="wf-combo-row"><input id="wf-prop-formKey" class="wf-prop-input" autocomplete="off"/><button type="button" class="wf-combo-btn" tabindex="-1" aria-label="Choose">&#9662;</button></div><ul class="wf-combo-list" hidden="hidden"></ul></div>
+  <div class="wf-prop-label">assignee (userId, token, or ${r"${var}"})</div>
+  <div class="wf-combo"><div class="wf-combo-row"><input id="wf-prop-assignee" class="wf-prop-input" autocomplete="off"/><button type="button" class="wf-combo-btn" tabindex="-1" aria-label="Choose">&#9662;</button></div><ul class="wf-combo-list" hidden="hidden"></ul></div>
+  <div class="wf-prop-hint">tokens: initiator, managerOfInitiator, managerOfAssignee, role:{roleTypeId}</div>
+  <div class="wf-prop-label">candidateUsers</div>
+  <div class="wf-combo"><div class="wf-combo-row"><input id="wf-prop-candidateUsers" class="wf-prop-input" autocomplete="off"/><button type="button" class="wf-combo-btn" tabindex="-1" aria-label="Choose">&#9662;</button></div><ul class="wf-combo-list" hidden="hidden"></ul></div>
+  <div class="wf-prop-label">candidateGroups</div>
+  <div class="wf-combo"><div class="wf-combo-row"><input id="wf-prop-candidateGroups" class="wf-prop-input" autocomplete="off"/><button type="button" class="wf-combo-btn" tabindex="-1" aria-label="Choose">&#9662;</button></div><ul class="wf-combo-list" hidden="hidden"></ul></div>
+  <div class="wf-prop-label">onApproveService</div>
+  <div class="wf-combo"><div class="wf-combo-row"><input id="wf-prop-onApprove" class="wf-prop-input" autocomplete="off"/><button type="button" class="wf-combo-btn" tabindex="-1" aria-label="Choose">&#9662;</button></div><ul class="wf-combo-list" hidden="hidden"></ul></div>
+  <div class="wf-prop-label">onRejectService</div>
+  <div class="wf-combo"><div class="wf-combo-row"><input id="wf-prop-onReject" class="wf-prop-input" autocomplete="off"/><button type="button" class="wf-combo-btn" tabindex="-1" aria-label="Choose">&#9662;</button></div><ul class="wf-combo-list" hidden="hidden"></ul></div>
+  <div class="wf-prop-label">onReturnService</div>
+  <div class="wf-combo"><div class="wf-combo-row"><input id="wf-prop-onReturn" class="wf-prop-input" autocomplete="off"/><button type="button" class="wf-combo-btn" tabindex="-1" aria-label="Choose">&#9662;</button></div><ul class="wf-combo-list" hidden="hidden"></ul></div>
+  <label class="wf-prop-check"><input id="wf-prop-allowAddSign" type="checkbox"/> allowAddSign</label>
+</div>
+<div id="wf-panel-loop" style="display:none">
+  <div class="wf-prop-label">collection</div><input id="wf-prop-collection" class="wf-prop-input" placeholder="approverList"/>
+  <div class="wf-prop-label">elementVariable</div><input id="wf-prop-elementVar" class="wf-prop-input" placeholder="approver"/>
+  <div class="wf-prop-label">completionCondition</div><input id="wf-prop-completion" class="wf-prop-input" placeholder="nrOfCompletedInstances == nrOfInstances"/>
+</div>
+<div id="wf-panel-service" style="display:none">
+  <div class="wf-prop-label">serviceName</div>
+  <div class="wf-combo"><div class="wf-combo-row"><input id="wf-prop-serviceName" class="wf-prop-input" autocomplete="off"/><button type="button" class="wf-combo-btn" tabindex="-1" aria-label="Choose">&#9662;</button></div><ul class="wf-combo-list" hidden="hidden"></ul></div>
+</div>
+<div id="wf-panel-call" style="display:none">
+  <div class="wf-prop-label">calledElement (process key)</div>
+  <div class="wf-combo"><div class="wf-combo-row"><input id="wf-prop-calledElement" class="wf-prop-input" autocomplete="off"/><button type="button" class="wf-combo-btn" tabindex="-1" aria-label="Choose">&#9662;</button></div><ul class="wf-combo-list" hidden="hidden"></ul></div>
+</div>
+<div id="wf-panel-flow" style="display:none">
+  <div class="wf-prop-label">conditionExpression</div><input id="wf-prop-condition" class="wf-prop-input" placeholder="${r"${outcome == 'approve'}"}"/>
+</div>
+<div id="wf-panel-timer" style="display:none">
+  <div class="wf-prop-label">timeDuration</div><input id="wf-prop-timer" class="wf-prop-input" placeholder="PT5M"/>
+</div>
+<div id="wf-panel-event" style="display:none">
+  <div class="wf-prop-label">message/signal name</div><input id="wf-prop-eventName" class="wf-prop-input" placeholder="orderPaid"/>
+</div>
+                        ]]></text>
+                    </render-mode>
+                </container>
+            </row-col>
+
         </container-row>
     </widgets>
 </screen>

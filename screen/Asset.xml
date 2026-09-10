@@ -5,8 +5,10 @@
 
     <parameter name="file"/>
 
-    <actions>
-        <script><![CDATA[
+    <transition name="get" method="get" begin-transaction="false" read-only="true">
+        <parameter name="file"/>
+        <actions>
+            <script><![CDATA[
             def allowed = [
                 'bpmn-modeler.production.min.js',
                 'bpmn-navigated-viewer.production.min.js',
@@ -16,6 +18,7 @@
                 'flowable.json',
                 'designer.js',
                 'bpmn-font-fix.css',
+                'designer-panel.css',
                 'bpmn.woff2',
                 'bpmn.woff',
                 'bpmn.ttf'
@@ -25,7 +28,9 @@
             } else {
                 ec.web.sendResourceResponse("component://collie-flowable/screen/static/bpmn-js/" + file, true)
             }
-        ]]></script>
-    </actions>
+            ]]></script>
+        </actions>
+        <default-response type="none"/>
+    </transition>
     <widgets></widgets>
 </screen>

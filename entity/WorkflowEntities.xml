@@ -5,6 +5,7 @@
     <entity entity-name="WfProcessDefinition" package="wf.flowable" short-alias="wf-process-definitions">
         <field name="processDefinitionKey" type="id" is-pk="true"/>
         <field name="processName" type="text-medium"/>
+        <field name="description" type="text-long"/>
         <field name="bpmnXml" type="text-very-long"/>
         <field name="statusId" type="id"/>
         <field name="deploymentId" type="text-medium"/>

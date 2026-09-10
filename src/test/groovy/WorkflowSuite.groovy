@@ -1,0 +1,13 @@
+import org.junit.jupiter.api.AfterAll
+import org.junit.platform.suite.api.SelectClasses
+import org.junit.platform.suite.api.Suite
+import org.moqui.Moqui
+
+@Suite
+@SelectClasses([WorkflowPhase2Tests.class])
+class WorkflowSuite {
+    @AfterAll
+    static void destroyMoqui() {
+        Moqui.destroyActiveExecutionContextFactory()
+    }
+}

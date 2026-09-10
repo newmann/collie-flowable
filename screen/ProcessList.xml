@@ -16,33 +16,83 @@
         <service-call name="wf.flowable.WorkflowServices.activate#ProcessDefinition"/>
         <default-response url="."/>
     </transition>
+    <transition name="createProcess">
+        <service-call name="wf.flowable.WorkflowServices.create#ProcessDefinition"/>
+        <default-response url="."/>
+        <error-response url="."/>
+    </transition>
 
     <actions>
         <service-call name="wf.flowable.WorkflowServices.list#ProcessDefinitions" out-map="context"/>
+        <script>wf.flowable.WorkflowSupport.filterSortPaginate(ec, "processDefinitionList",
+                ["processDefinitionKey", "processName", "description", "statusId", "deploymentId"])</script>
     </actions>
     <widgets>
-        <label text="Process Definitions" type="h4"/>
-        <link url="../Designer" text="Open Designer" link-type="anchor"/>
-        <form-list name="DefinitionList" list="processDefinitionList" skip-form="true">
-            <field name="processDefinitionKey"><default-field title="Key">
-                <link url="../Designer" text="${processDefinitionKey}" link-type="anchor">
-                    <parameter name="processDefinitionKey"/>
-                </link>
-            </default-field></field>
-            <field name="processName"><default-field title="Name"><display/></default-field></field>
-            <field name="statusId"><default-field title="Status"><display/></default-field></field>
-            <field name="deploymentId"><default-field title="Deployment"><display/></default-field></field>
-            <field name="deploy"><default-field title="">
+        <label text="Process Definitions" type="h3"/>
+        <container-dialog id="CreateProcessDialog" button-text="New Process" icon="fa fa-plus">
+            <form-single name="CreateProcess" transition="createProcess">
+                <field name="processDefinitionKey">
+                    <default-field title="Process Number"><text-line size="24"/></default-field>
+                </field>
+                <field name="processName">
+                    <default-field title="Name"><text-line size="40"/></default-field>
+                </field>
+                <field name="description">
+                    <default-field title="Remarks"><text-area rows="3" cols="40"/></default-field>
+                </field>
+                <field name="submit">
+                    <default-field title="Create"><submit/></default-field>
+                </field>
+            </form-single>
+        </container-dialog>
+        <form-list name="DefinitionList" list="processDefinitionList" skip-form="true"
+                header-dialog="true" select-columns="true" saved-finds="true"
+                show-csv-button="true" show-xlsx-button="true" show-page-size="true">
+            <field name="processDefinitionKey">
+                <header-field title="Process Number" show-order-by="case-insensitive">
+                    <text-find size="20"/>
+                </header-field>
+                <default-field title="Process Number">
+                    <link url="../Designer" text="${processDefinitionKey}" link-type="anchor">
+                        <parameter name="processDefinitionKey"/>
+                    </link>
+                </default-field>
+            </field>
+            <field name="processName">
+                <header-field title="Name" show-order-by="case-insensitive">
+                    <text-find size="20"/>
+                </header-field>
+                <default-field title="Name"><display/></default-field>
+            </field>
+            <field name="description">
+                <header-field title="Remarks" show-order-by="case-insensitive">
+                    <text-find size="20"/>
+                </header-field>
+                <default-field title="Remarks"><display/></default-field>
+            </field>
+            <field name="statusId">
+                <header-field title="Status" show-order-by="true">
+                    <drop-down allow-empty="true">
+                        <option key="WfDefDraft" text="Draft"/>
+                        <option key="WfDefDeployed" text="Deployed"/>
+                        <option key="WfDefSuspended" text="Suspended"/>
+                    </drop-down>
+                </header-field>
+                <default-field title="Status"><display/></default-field>
+            </field>
+            <field name="deploymentId">
+                <header-field title="Deployment" show-order-by="true">
+                    <text-find size="20"/>
+                </header-field>
+                <default-field title="Deployment"><display/></default-field>
+            </field>
+            <field name="actionButton"><default-field title="">
                 <link url="deploy" text="Deploy">
                     <parameter name="processDefinitionKey"/>
                 </link>
-            </default-field></field>
-            <field name="suspend"><default-field title="">
                 <link url="suspend" text="Suspend">
                     <parameter name="processDefinitionKey"/>
                 </link>
-            </default-field></field>
-            <field name="activate"><default-field title="">
                 <link url="activate" text="Activate">
                     <parameter name="processDefinitionKey"/>
                 </link>

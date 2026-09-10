@@ -18,6 +18,7 @@ dependencies {
     implementation project(':framework')
     // Apache 2.0. Do not use Flowable 8.x (Jackson 3 / Spring Boot 4).
     implementation 'org.flowable:flowable-engine:7.2.0'
+    testImplementation project(':framework').configurations.testImplementation.allDependencies
 }
 
 check.dependsOn.clear()
@@ -47,6 +48,16 @@ task downloadBpmnJs { doLast {
         targetFile.getParentFile().mkdirs()
         ant.get(src: sourceUrl, dest: targetFile)
     }
+    File bpmnCss = file("${bpmnJsDir}/bpmn.css")
+    if (bpmnCss.exists()) {
+        String css = bpmnCss.getText('UTF-8')
+        if (css.contains("../font/")) {
+            String stripped = css.replaceAll(/(?s)\/\*\s*Chrome hack:.*?Note, that will break hinting!.*?\*\/\s*\/\*.*?\*\//, '')
+            stripped = stripped.replaceAll(/(?s)@font-face\s*\{.*?\}/, '/* font-face served by bpmn-font-fix.css */')
+            bpmnCss.write(stripped, 'UTF-8')
+            logger.lifecycle("Stripped relative @font-face from ${bpmnCss.absolutePath}")
+        }
+    }
 } }
 
 task cleanLib(type: Delete) { delete fileTree(dir: projectDir.absolutePath+'/lib', include: '*') }
@@ -67,3 +78,28 @@ task copyDependencies { doLast {
 copyDependencies.dependsOn cleanLib
 copyDependencies.dependsOn downloadBpmnJs
 jar.dependsOn copyDependencies
+
+test {
+    useJUnitPlatform()
+    testLogging { events "passed", "skipped", "failed" }
+    testLogging.showStandardStreams = true
+    testLogging.showExceptions = true
+    maxParallelForks = 1
+    maxHeapSize = "512M"
+
+    dependsOn cleanTest
+    if (project.hasProperty('testClass')) {
+        include "**/${testClass}.class"
+    } else {
+        include '**/WorkflowSuite.class'
+    }
+
+    systemProperty 'moqui.runtime', moquiDir.absolutePath + '/runtime'
+    systemProperty 'moqui.conf', 'conf/MoquiDevConf.xml'
+    systemProperty 'moqui.init.static', 'true'
+
+    classpath += files(sourceSets.main.output.classesDirs)
+    classpath = classpath.filter { it.exists() }
+
+    beforeTest { descriptor -> logger.lifecycle("Running test: ${descriptor}") }
+}

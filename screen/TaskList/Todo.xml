@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<screen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/xml-screen-3.xsd"
+        default-menu-title="To Do" require-authentication="true">
+
+    <parameter name="taskId"/>
+
+    <transition name="claim">
+        <service-call name="wf.flowable.WorkflowServices.claim#Task"/>
+        <default-response url="."/>
+    </transition>
+
+    <transition name="searchUserList" read-only="true">
+        <parameter name="term"/>
+        <parameter name="pageIndex"/>
+        <actions>
+            <if condition="!term &amp;&amp; !pageIndex"><script>ec.web.sendJsonResponse([])</script><return/></if>
+            <service-call name="wf.flowable.DesignerServices.list#Users" in-map="[query:term]" out-map="usersOut"/>
+            <script><![CDATA[
+                def outList = []
+                for (u in (usersOut.userList ?: [])) {
+                    def party = ec.entity.find("mantle.party.PartyDetail").condition("partyId", u.userId).one()
+                    String label = party ? ec.resource.expand("PartyNameTemplate", "", party) :
+                            (u.userFullName ?: u.username ?: u.userId)
+                    outList.add([value: u.userId, label: label])
+                }
+                ec.web.sendJsonResponse(outList)
+            ]]></script>
+        </actions>
+        <default-response type="none"/>
+    </transition>
+
+    <actions>
+        <service-call name="wf.flowable.WorkflowServices.list#MyTasks" out-map="context"/>
+        <script>wf.flowable.WorkflowSupport.filterSortPaginate(ec, "taskList",
+                ["name", "assignee", "businessKey", "formKey"])</script>
+    </actions>
+    <widgets>
+        <form-list name="TodoList" list="taskList" skip-form="true"
+                header-dialog="true" select-columns="true" saved-finds="true"
+                show-csv-button="true" show-xlsx-button="true" show-page-size="true">
+            <field name="name">
+                <header-field title="Task" show-order-by="case-insensitive">
+                    <text-find size="30"/>
+                </header-field>
+                <default-field title="Task">
+                    <link url="//collie-flowable/InstanceDetail" text="${name}" link-type="anchor">
+                        <parameter name="taskId"/>
+                        <parameter name="processInstanceId"/>
+                        <parameter name="businessKey"/>
+                    </link>
+                </default-field>
+            </field>
+            <field name="assignee">
+                <header-field title="Assignee" show-order-by="case-insensitive">
+                    <drop-down allow-empty="true">
+                        <dynamic-options transition="searchUserList" server-search="true" min-length="2"/>
+                    </drop-down>
+                </header-field>
+                <default-field title="Assignee">
+                    <display-entity entity-name="mantle.party.PartyDetail" text="PartyNameTemplate"/>
+                </default-field>
+            </field>
+            <field name="businessKey">
+                <header-field title="Business Key" show-order-by="case-insensitive">
+                    <text-find size="20"/>
+                </header-field>
+                <default-field title="Business Key"><display/></default-field>
+            </field>
+            <field name="formKey">
+                <header-field title="Form" show-order-by="case-insensitive">
+                    <text-find size="20"/>
+                </header-field>
+                <default-field title="Form"><display/></default-field>
+            </field>
+            <field name="claim">
+                <conditional-field title="" condition="!assignee">
+                    <link url="claim" text="Claim" icon="fa fa-hand-paper-o"><parameter name="taskId"/></link>
+                </conditional-field>
+                <default-field title=""><display text=""/></default-field>
+            </field>
+        </form-list>
+    </widgets>
+</screen>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:flowable="http://flowable.org/bpmn"
+        xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+        xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+        xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+        targetNamespace="http://moqui.org/flowable"
+        id="demoCallChildDefinitions">
+    <process id="demoCallChild" name="Demo Call Child" isExecutable="true">
+        <startEvent id="start" name="Start"/>
+        <sequenceFlow id="toReview" sourceRef="start" targetRef="childReview"/>
+        <userTask id="childReview" name="Child review"
+                flowable:candidateGroups="ADMIN"
+                flowable:formKey="component://collie-wf-demo/screen/RequestFinance.xml"/>
+        <sequenceFlow id="toEnd" sourceRef="childReview" targetRef="end"/>
+        <endEvent id="end" name="End"/>
+    </process>
+    <bpmndi:BPMNDiagram id="BPMNDiagram_demoCallChild">
+        <bpmndi:BPMNPlane id="BPMNPlane_demoCallChild" bpmnElement="demoCallChild">
+            <bpmndi:BPMNShape id="start_di" bpmnElement="start"><dc:Bounds x="152" y="162" width="36" height="36"/></bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="childReview_di" bpmnElement="childReview"><dc:Bounds x="250" y="140" width="160" height="80"/></bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="end_di" bpmnElement="end"><dc:Bounds x="480" y="162" width="36" height="36"/></bpmndi:BPMNShape>
+            <bpmndi:BPMNEdge id="toReview_di" bpmnElement="toReview"><di:waypoint x="188" y="180"/><di:waypoint x="250" y="180"/></bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="toEnd_di" bpmnElement="toEnd"><di:waypoint x="410" y="180"/><di:waypoint x="480" y="180"/></bpmndi:BPMNEdge>
+        </bpmndi:BPMNPlane>
+    </bpmndi:BPMNDiagram>
+</definitions>

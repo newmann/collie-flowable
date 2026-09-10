@@ -5,6 +5,7 @@
     <moqui.basic.LocalizedMessage original="My Tasks" locale="zh" localized="我的任务"/>
     <moqui.basic.LocalizedMessage original="Definitions" locale="zh" localized="流程定义"/>
     <moqui.basic.LocalizedMessage original="Designer" locale="zh" localized="设计器"/>
+    <moqui.basic.LocalizedMessage original="Process Designing" locale="zh" localized="流程设计"/>
     <moqui.basic.LocalizedMessage original="Monitor" locale="zh" localized="监控"/>
     <moqui.basic.LocalizedMessage original="Instance" locale="zh" localized="实例"/>
     <moqui.basic.LocalizedMessage original="To Do" locale="zh" localized="待办"/>
@@ -23,11 +24,10 @@
     <moqui.basic.LocalizedMessage original="Assignee" locale="zh" localized="办理人"/>
     <moqui.basic.LocalizedMessage original="Business Key" locale="zh" localized="业务键"/>
     <moqui.basic.LocalizedMessage original="Form" locale="zh" localized="表单"/>
-    <moqui.basic.LocalizedMessage original="Key" locale="zh" localized="标识"/>
+    <moqui.basic.LocalizedMessage original="Process Number" locale="zh" localized="流程编号"/>
+    <moqui.basic.LocalizedMessage original="Version" locale="zh" localized="版本"/>
     <moqui.basic.LocalizedMessage original="Claim" locale="zh" localized="签收"/>
     <moqui.basic.LocalizedMessage original="Unclaim" locale="zh" localized="取消签收"/>
-    <moqui.basic.LocalizedMessage original="Complete selected task" locale="zh" localized="完成所选任务"/>
-    <moqui.basic.LocalizedMessage original="Transfer task" locale="zh" localized="转办任务"/>
     <moqui.basic.LocalizedMessage original="Outcome" locale="zh" localized="结果"/>
     <moqui.basic.LocalizedMessage original="Approve" locale="zh" localized="同意"/>
     <moqui.basic.LocalizedMessage original="Reject" locale="zh" localized="驳回"/>
@@ -38,12 +38,21 @@
     <moqui.basic.LocalizedMessage original="To userId" locale="zh" localized="转给用户"/>
     <moqui.basic.LocalizedMessage original="Ended" locale="zh" localized="结束时间"/>
     <moqui.basic.LocalizedMessage original="Started" locale="zh" localized="开始时间"/>
-    <moqui.basic.LocalizedMessage original="Open Designer" locale="zh" localized="打开设计器"/>
+    <moqui.basic.LocalizedMessage original="running" locale="zh" localized="进行中"/>
+    <moqui.basic.LocalizedMessage original="ended" locale="zh" localized="已结束"/>
+    <moqui.basic.LocalizedMessage original="Draft" locale="zh" localized="草稿"/>
+    <moqui.basic.LocalizedMessage original="Deployed" locale="zh" localized="已部署"/>
+    <moqui.basic.LocalizedMessage original="Suspended" locale="zh" localized="已挂起"/>
+    <moqui.basic.LocalizedMessage original="New Process" locale="zh" localized="新增流程"/>
     <moqui.basic.LocalizedMessage original="Deployment" locale="zh" localized="部署"/>
     <moqui.basic.LocalizedMessage original="Deploy" locale="zh" localized="部署"/>
     <moqui.basic.LocalizedMessage original="Suspend" locale="zh" localized="挂起"/>
     <moqui.basic.LocalizedMessage original="Activate" locale="zh" localized="激活"/>
     <moqui.basic.LocalizedMessage original="Save Draft" locale="zh" localized="保存草稿"/>
+    <moqui.basic.LocalizedMessage original="Save" locale="zh" localized="保存"/>
+    <moqui.basic.LocalizedMessage original="Remarks" locale="zh" localized="备注"/>
+    <moqui.basic.LocalizedMessage original="Update Properties" locale="zh" localized="更新属性"/>
+    <moqui.basic.LocalizedMessage original="Deploy Process" locale="zh" localized="部署流程"/>
     <moqui.basic.LocalizedMessage original="Starter" locale="zh" localized="发起人"/>
     <moqui.basic.LocalizedMessage original="Current" locale="zh" localized="当前节点"/>
     <moqui.basic.LocalizedMessage original="When" locale="zh" localized="时间"/>
@@ -63,17 +72,29 @@
             localized="请先签收任务，或你不是当前办理人。"/>
     <moqui.basic.LocalizedMessage original="Select a node to edit Moqui properties. Save writes a draft; Deploy runs CF-47a. Keep the bpmn.io watermark visible."
             locale="zh" localized="选中节点可编辑 Moqui 属性。保存写入草稿；部署执行 CF-47a。请保留 bpmn.io 水印。"/>
+    <moqui.basic.LocalizedMessage original="Must open from the definition list with processDefinitionKey. Update Properties changes name and remarks. Save writes a diagram draft. Deploy runs CF-47a. Keep the bpmn.io watermark visible."
+            locale="zh" localized="必须从定义列表带 processDefinitionKey 进入。Update Properties 改名称和备注；Save 写流程图草稿。部署执行 CF-47a。请保留 bpmn.io 水印。"/>
     <moqui.basic.LocalizedMessage original="Read-only diagram. Keep the bpmn.io watermark visible." locale="zh"
             localized="只读流程图。请保留 bpmn.io 水印。"/>
+    <moqui.basic.LocalizedMessage original="No process diagram available." locale="zh"
+            localized="没有可用的流程图。"/>
     <moqui.basic.LocalizedMessage original="Workflow task assigned" locale="zh" localized="工作流任务已分配"/>
     <moqui.basic.LocalizedMessage original="Workflow task ${taskName?:taskId}" locale="zh" localized="工作流任务 ${taskName?:taskId}"/>
     <moqui.basic.LocalizedMessage original="Instance ${instance.processInstanceId ?: ''}" locale="zh"
             localized="实例 ${instance.processInstanceId ?: ''}"/>
-    <moqui.basic.LocalizedMessage original="Key ${instance.processDefinitionKey ?: ''}  status ${instance.status ?: ''}  businessKey ${instance.businessKey ?: ''}"
-            locale="zh" localized="标识 ${instance.processDefinitionKey ?: ''}  状态 ${instance.status ?: ''}  业务键 ${instance.businessKey ?: ''}"/>
+    <moqui.basic.LocalizedMessage original="Process Number ${instance.processDefinitionKey ?: ''}  status ${instance.status ?: ''}  businessKey ${instance.businessKey ?: ''}"
+            locale="zh" localized="流程编号 ${instance.processDefinitionKey ?: ''}  状态 ${instance.status ?: ''}  业务键 ${instance.businessKey ?: ''}"/>
     <moqui.basic.LocalizedMessage original="Status ${statusId ?: 'new'}" locale="zh" localized="状态 ${statusId ?: 'new'}"/>
 
     <!-- service errors (must match localize / expand original) -->
+    <moqui.basic.LocalizedMessage original="processDefinitionKey and processName are required" locale="zh"
+            localized="必须提供 processDefinitionKey 和 processName"/>
+    <moqui.basic.LocalizedMessage original="processDefinitionKey is required" locale="zh"
+            localized="必须提供 processDefinitionKey"/>
+    <moqui.basic.LocalizedMessage original="processDefinitionKey must start with a letter or underscore and contain only letters, digits, and underscores"
+            locale="zh" localized="processDefinitionKey 必须以字母或下划线开头，且只能包含字母、数字和下划线"/>
+    <moqui.basic.LocalizedMessage original="Process definition ${key} already exists" locale="zh"
+            localized="流程定义 ${key} 已存在"/>
     <moqui.basic.LocalizedMessage original="processDefinitionKey and bpmnXml are required" locale="zh"
             localized="必须提供 processDefinitionKey 和 bpmnXml"/>
     <moqui.basic.LocalizedMessage original="Process definition ${key} not found" locale="zh"
@@ -135,6 +156,40 @@
             localized="服务任务 ${id} 缺少 serviceName"/>
     <moqui.basic.LocalizedMessage original="Invalid BPMN XML: ${message}" locale="zh"
             localized="无效的 BPMN XML：${message}"/>
+    <moqui.basic.LocalizedMessage original="Failed to activate process: ${message}" locale="zh"
+            localized="激活流程失败：${message}"/>
+    <moqui.basic.LocalizedMessage original="Cannot add sign on a countersign or parallel task" locale="zh"
+            localized="会签或并行任务不能加签"/>
+    <moqui.basic.LocalizedMessage original="Add sign is not allowed on this task" locale="zh"
+            localized="此任务不允许加签"/>
+    <moqui.basic.LocalizedMessage original="User ${userId} not found" locale="zh"
+            localized="未找到用户 ${userId}"/>
+    <moqui.basic.LocalizedMessage original="targetActivityId is required" locale="zh"
+            localized="必须提供 targetActivityId"/>
+    <moqui.basic.LocalizedMessage original="Cannot return to a node on a parallel or countersign instance; use a BPMN return edge" locale="zh"
+            localized="并行或会签实例不能驳回指定节点，请使用 BPMN 回退边"/>
+    <moqui.basic.LocalizedMessage original="targetActivityId must be a UserTask already visited on this instance" locale="zh"
+            localized="只能驳回到本实例已经过的用户任务"/>
+    <moqui.basic.LocalizedMessage original="Parent task ${taskId} not found" locale="zh"
+            localized="未找到父任务 ${taskId}"/>
+    <moqui.basic.LocalizedMessage original="messageName is required" locale="zh" localized="必须提供 messageName"/>
+    <moqui.basic.LocalizedMessage original="signalName is required" locale="zh" localized="必须提供 signalName"/>
+    <moqui.basic.LocalizedMessage original="No waiting ${kind} subscription named ${name} on this instance" locale="zh"
+            localized="此实例没有等待中的 ${kind} 订阅 ${name}"/>
+    <moqui.basic.LocalizedMessage original="Call Activity ${id} missing calledElement" locale="zh"
+            localized="调用活动 ${id} 缺少 calledElement"/>
+    <moqui.basic.LocalizedMessage original="Message catch ${id} missing message name" locale="zh"
+            localized="消息捕获 ${id} 缺少消息名"/>
+    <moqui.basic.LocalizedMessage original="Signal catch ${id} missing signal name" locale="zh"
+            localized="信号捕获 ${id} 缺少信号名"/>
+    <moqui.basic.LocalizedMessage original="Call Activity cycle detected" locale="zh"
+            localized="检测到调用活动循环"/>
+    <moqui.basic.LocalizedMessage original="Open tasks" locale="zh" localized="当前待办"/>
+    <moqui.basic.LocalizedMessage original="Parent task" locale="zh" localized="父任务"/>
+    <moqui.basic.LocalizedMessage original="Actions" locale="zh" localized="操作"/>
+    <moqui.basic.LocalizedMessage original="Add sign" locale="zh" localized="加签"/>
+    <moqui.basic.LocalizedMessage original="Return to" locale="zh" localized="驳回到"/>
+    <moqui.basic.LocalizedMessage original="Return to node" locale="zh" localized="驳回指定节点"/>
 
     <!-- StatusItem / StatusFlowTransition -->
     <moqui.basic.LocalizedEntityField entityName="moqui.basic.StatusItem" fieldName="description"

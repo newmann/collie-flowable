@@ -2,7 +2,7 @@
 <screen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/xml-screen-3.xsd"
         default-menu-title="Workflow" require-authentication="true"
-        server-static="vuet,qvt,qvt2">
+        server-static="vuet,qvt">
 
     <subscreens default-item="TaskList">
         <subscreens-item name="TaskList" menu-title="My Tasks" menu-index="1"
@@ -11,7 +11,7 @@
                 location="component://collie-flowable/screen/InstanceDetail.xml"/>
         <subscreens-item name="ProcessList" menu-title="Definitions" menu-index="3"
                 location="component://collie-flowable/screen/ProcessList.xml"/>
-        <subscreens-item name="Designer" menu-title="Designer" menu-index="4"
+        <subscreens-item name="Designer" menu-title="Process Designing" menu-index="4" menu-include="false"
                 location="component://collie-flowable/screen/ProcessDesigner.xml"/>
         <subscreens-item name="Monitor" menu-title="Monitor" menu-index="5"
                 location="component://collie-flowable/screen/Monitor.xml"/>
@@ -20,7 +20,6 @@
     </subscreens>
 
     <widgets>
-        <label text="Workflow" type="h3"/>
-        <subscreens-panel id="cf-app" type="tab"/>
+        <subscreens-panel id="cf-app" type="popup"/>
     </widgets>
 </screen>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<screen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/xml-screen-3.xsd"
+        default-menu-title="Started by me" require-authentication="true">
+
+    <actions>
+        <service-call name="wf.flowable.WorkflowServices.list#MyStarted" out-map="startedOut"/>
+        <set field="startedList" from="startedOut.instanceList"/>
+        <script>wf.flowable.WorkflowSupport.filterSortPaginate(ec, "startedList",
+                ["processDefinitionKey", "businessKey", "status", "startTime"])</script>
+    </actions>
+    <widgets>
+        <form-list name="StartedList" list="startedList" skip-form="true"
+                header-dialog="true" select-columns="true" saved-finds="true"
+                show-csv-button="true" show-xlsx-button="true" show-page-size="true">
+            <field name="processDefinitionKey">
+                <header-field title="Process Number" show-order-by="case-insensitive">
+                    <text-find size="20"/>
+                </header-field>
+                <default-field title="Process Number"><display/></default-field>
+            </field>
+            <field name="businessKey">
+                <header-field title="Business Key" show-order-by="case-insensitive">
+                    <text-find size="20"/>
+                </header-field>
+                <default-field title="Business Key">
+                    <link url="//collie-flowable/InstanceDetail" text="${businessKey}" link-type="anchor">
+                        <parameter name="processInstanceId"/>
+                        <parameter name="businessKey"/>
+                    </link>
+                </default-field>
+            </field>
+            <field name="status">
+                <header-field title="Status" show-order-by="true">
+                    <drop-down allow-empty="true">
+                        <option key="running" text="running"/>
+                        <option key="ended" text="ended"/>
+                    </drop-down>
+                </header-field>
+                <default-field title="Status">
+                    <display style="${status == 'running' ? 'text-info' : 'text-muted text-grey'}"/>
+                </default-field>
+            </field>
+            <field name="startTime">
+                <header-field title="Started" show-order-by="true">
+                    <date-period/>
+                </header-field>
+                <default-field title="Started"><display/></default-field>
+            </field>
+        </form-list>
+    </widgets>
+</screen>

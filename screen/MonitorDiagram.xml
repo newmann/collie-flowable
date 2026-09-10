@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<screen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/xml-screen-3.xsd"
+        default-menu-title="Process Monitor" require-authentication="true">
+
+    <parameter name="processInstanceId"/>
+    <parameter name="processDefinitionKey"/>
+
+    <actions>
+        <if condition="processInstanceId">
+            <service-call name="wf.flowable.WorkflowServices.get#ProcessInstance" out-map="instanceOut">
+                <field-map field-name="processInstanceId" from="processInstanceId"/>
+            </service-call>
+            <if condition="!processDefinitionKey">
+                <set field="processDefinitionKey" from="instanceOut?.processDefinitionKey"/>
+            </if>
+            <script>context.currentActivitiesJson = groovy.json.JsonOutput.toJson(instanceOut?.currentActivities ?: [])</script>
+            <script>context.completedActivitiesJson = groovy.json.JsonOutput.toJson(instanceOut?.completedActivities ?: [])</script>
+            <script>context.completedFlowsJson = groovy.json.JsonOutput.toJson(instanceOut?.completedFlows ?: [])</script>
+        </if>
+        <if condition="processDefinitionKey">
+            <service-call name="wf.flowable.WorkflowServices.get#ProcessDefinition" out-map="defnOut">
+                <field-map field-name="processDefinitionKey" from="processDefinitionKey"/>
+            </service-call>
+            <set field="monitorBpmnXml" from="defnOut.bpmnXml ? org.moqui.util.WebUtilities.encodeHtml(defnOut.bpmnXml as String) : null"/>
+        </if>
+        <if condition="!currentActivitiesJson"><set field="currentActivitiesJson" value="[]"/></if>
+        <if condition="!completedActivitiesJson"><set field="completedActivitiesJson" value="[]"/></if>
+        <if condition="!completedFlowsJson"><set field="completedFlowsJson" value="[]"/></if>
+        <script>context.currentActivitiesJson = org.moqui.util.WebUtilities.encodeHtml((context.currentActivitiesJson ?: "[]") as String)</script>
+        <script>context.completedActivitiesJson = org.moqui.util.WebUtilities.encodeHtml((context.completedActivitiesJson ?: "[]") as String)</script>
+        <script>context.completedFlowsJson = org.moqui.util.WebUtilities.encodeHtml((context.completedFlowsJson ?: "[]") as String)</script>
+    </actions>
+    <widgets>
+        <label text="Read-only diagram. Keep the bpmn.io watermark visible." type="p"/>
+        <label text="No process diagram available." condition="!monitorBpmnXml"/>
+        <section name="MonitorDiagram" condition="monitorBpmnXml"><widgets>
+            <container id="wf-monitor-canvas"/>
+            <render-mode>
+                <text type="html"><![CDATA[
+<textarea id="wf-monitor-xml" style="display:none">${monitorBpmnXml!}</textarea>
+<textarea id="wf-monitor-activities" style="display:none">${currentActivitiesJson!'[]'}</textarea>
+<textarea id="wf-monitor-completed" style="display:none">${completedActivitiesJson!'[]'}</textarea>
+<textarea id="wf-monitor-flows" style="display:none">${completedFlowsJson!'[]'}</textarea>
+<link rel="stylesheet" href="/apps/collie-flowable/Asset/get?file=diagram-js.css"/>
+<link rel="stylesheet" href="/apps/collie-flowable/Asset/get?file=bpmn-js.css"/>
+<link rel="stylesheet" href="/apps/collie-flowable/Asset/get?file=bpmn.css"/>
+<link rel="stylesheet" href="/apps/collie-flowable/Asset/get?file=bpmn-font-fix.css&amp;v=7"/>
+<script src="/apps/collie-flowable/Asset/get?file=bpmn-navigated-viewer.production.min.js"></script>
+<script>
+(function initMonitor() {
+  function isModelerCtor(Ctor) {
+    return !!(Ctor && Ctor.prototype && typeof Ctor.prototype.createDiagram === 'function');
+  }
+  function viewerCtor() {
+    if (window.BpmnNavigatedViewer && !isModelerCtor(window.BpmnNavigatedViewer)) return window.BpmnNavigatedViewer;
+    if (window.BpmnJS && !isModelerCtor(window.BpmnJS)) {
+      window.BpmnNavigatedViewer = window.BpmnJS;
+      return window.BpmnNavigatedViewer;
+    }
+    return null;
+  }
+  var Ctor = viewerCtor();
+  if (!Ctor) {
+    if (!window._wfViewerLoading) {
+      window._wfViewerLoading = true;
+      var s = document.createElement('script');
+      s.src = '/apps/collie-flowable/Asset/get?file=bpmn-navigated-viewer.production.min.js&_wfViewer=1';
+      s.onload = function () {
+        window.BpmnNavigatedViewer = window.BpmnJS;
+        window._wfViewerLoading = false;
+        initMonitor();
+      };
+      s.onerror = function () { window._wfViewerLoading = false; };
+      document.head.appendChild(s);
+    } else {
+      setTimeout(initMonitor, 80);
+    }
+    return;
+  }
+  var el = document.getElementById('wf-monitor-canvas');
+  if (!el || el.getAttribute('data-wf-ready') === '1') return;
+  var xmlEl = document.getElementById('wf-monitor-xml');
+  if (!xmlEl) { setTimeout(initMonitor, 80); return; }
+  var xml = (xmlEl.value || '').trim();
+  if (!xml) return;
+  el.setAttribute('data-wf-ready', '1');
+  function parseList(id) {
+    try { return JSON.parse((document.getElementById(id) || {}).value || '[]'); } catch (e) { return []; }
+  }
+  var activities = parseList('wf-monitor-activities');
+  var completed = parseList('wf-monitor-completed');
+  var flows = parseList('wf-monitor-flows');
+  var viewer = new Ctor({ container: el });
+  var canvasApi = null;
+  function fitCanvas() {
+    try { (canvasApi || viewer.get('canvas')).resized(); } catch (ignored) {}
+  }
+  var ro = null;
+  function cleanup() {
+    if (ro) { try { ro.disconnect(); } catch (ignored) {} ro = null; }
+    window.removeEventListener('resize', fitCanvas);
+  }
+  if (typeof ResizeObserver !== 'undefined') {
+    ro = new ResizeObserver(function () { fitCanvas(); });
+    ro.observe(el);
+  }
+  window.addEventListener('resize', fitCanvas);
+  var goneWatch = new MutationObserver(function () {
+    if (!el.isConnected) { cleanup(); goneWatch.disconnect(); }
+  });
+  goneWatch.observe(document.body, { childList: true, subtree: true });
+  viewer.importXML(xml).then(function () {
+    canvasApi = viewer.get('canvas');
+    fitCanvas();
+    setTimeout(fitCanvas, 80);
+    var registry = viewer.get('elementRegistry');
+    function mark(id, cls) {
+      if (id && registry.get(id)) canvasApi.addMarker(id, cls);
+    }
+    (completed || []).forEach(function (id) { mark(id, 'highlight-completed'); });
+    (flows || []).forEach(function (id) { mark(id, 'highlight-completed'); });
+    if ((!flows || !flows.length) && completed && completed.length) {
+      var path = {};
+      completed.forEach(function (id) { path[id] = true; });
+      (activities || []).forEach(function (id) { path[id] = true; });
+      registry.forEach(function (el) {
+        if (el.type !== 'bpmn:SequenceFlow') return;
+        var src = el.source && el.source.id;
+        var tgt = el.target && el.target.id;
+        if (src && tgt && path[src] && path[tgt]) mark(el.id, 'highlight-completed');
+      });
+    }
+    (activities || []).forEach(function (id) { mark(id, 'highlight'); });
+  }).catch(function (err) { console.error(err); });
+})();
+</script>
+                ]]></text>
+                <text type="qvt,vuet"><![CDATA[
+<textarea id="wf-monitor-xml" style="display:none">${monitorBpmnXml!}</textarea>
+<textarea id="wf-monitor-activities" style="display:none">${currentActivitiesJson!'[]'}</textarea>
+<textarea id="wf-monitor-completed" style="display:none">${completedActivitiesJson!'[]'}</textarea>
+<textarea id="wf-monitor-flows" style="display:none">${completedFlowsJson!'[]'}</textarea>
+<m-stylesheet href="/apps/collie-flowable/Asset/get?file=diagram-js.css"></m-stylesheet>
+<m-stylesheet href="/apps/collie-flowable/Asset/get?file=bpmn-js.css"></m-stylesheet>
+<m-stylesheet href="/apps/collie-flowable/Asset/get?file=bpmn.css"></m-stylesheet>
+<m-stylesheet href="/apps/collie-flowable/Asset/get?file=bpmn-font-fix.css&amp;v=7"></m-stylesheet>
+<m-script src="/apps/collie-flowable/Asset/get?file=bpmn-navigated-viewer.production.min.js"></m-script>
+<m-script>
+(function initMonitor() {
+  function isModelerCtor(Ctor) {
+    return !!(Ctor && Ctor.prototype && typeof Ctor.prototype.createDiagram === 'function');
+  }
+  function viewerCtor() {
+    if (window.BpmnNavigatedViewer && !isModelerCtor(window.BpmnNavigatedViewer)) return window.BpmnNavigatedViewer;
+    if (window.BpmnJS && !isModelerCtor(window.BpmnJS)) {
+      window.BpmnNavigatedViewer = window.BpmnJS;
+      return window.BpmnNavigatedViewer;
+    }
+    return null;
+  }
+  var Ctor = viewerCtor();
+  if (!Ctor) {
+    if (!window._wfViewerLoading) {
+      window._wfViewerLoading = true;
+      var s = document.createElement('script');
+      s.src = '/apps/collie-flowable/Asset/get?file=bpmn-navigated-viewer.production.min.js&_wfViewer=1';
+      s.onload = function () {
+        window.BpmnNavigatedViewer = window.BpmnJS;
+        window._wfViewerLoading = false;
+        initMonitor();
+      };
+      s.onerror = function () { window._wfViewerLoading = false; };
+      document.head.appendChild(s);
+    } else {
+      setTimeout(initMonitor, 80);
+    }
+    return;
+  }
+  var el = document.getElementById('wf-monitor-canvas');
+  if (!el || el.getAttribute('data-wf-ready') === '1') return;
+  var xmlEl = document.getElementById('wf-monitor-xml');
+  if (!xmlEl) { setTimeout(initMonitor, 80); return; }
+  var xml = (xmlEl.value || '').trim();
+  if (!xml) return;
+  el.setAttribute('data-wf-ready', '1');
+  function parseList(id) {
+    try { return JSON.parse((document.getElementById(id) || {}).value || '[]'); } catch (e) { return []; }
+  }
+  var activities = parseList('wf-monitor-activities');
+  var completed = parseList('wf-monitor-completed');
+  var flows = parseList('wf-monitor-flows');
+  var viewer = new Ctor({ container: el });
+  var canvasApi = null;
+  function fitCanvas() {
+    try { (canvasApi || viewer.get('canvas')).resized(); } catch (ignored) {}
+  }
+  var ro = null;
+  function cleanup() {
+    if (ro) { try { ro.disconnect(); } catch (ignored) {} ro = null; }
+    window.removeEventListener('resize', fitCanvas);
+  }
+  if (typeof ResizeObserver !== 'undefined') {
+    ro = new ResizeObserver(function () { fitCanvas(); });
+    ro.observe(el);
+  }
+  window.addEventListener('resize', fitCanvas);
+  var goneWatch = new MutationObserver(function () {
+    if (!el.isConnected) { cleanup(); goneWatch.disconnect(); }
+  });
+  goneWatch.observe(document.body, { childList: true, subtree: true });
+  viewer.importXML(xml).then(function () {
+    canvasApi = viewer.get('canvas');
+    fitCanvas();
+    setTimeout(fitCanvas, 80);
+    var registry = viewer.get('elementRegistry');
+    function mark(id, cls) {
+      if (id && registry.get(id)) canvasApi.addMarker(id, cls);
+    }
+    (completed || []).forEach(function (id) { mark(id, 'highlight-completed'); });
+    (flows || []).forEach(function (id) { mark(id, 'highlight-completed'); });
+    if ((!flows || !flows.length) && completed && completed.length) {
+      var path = {};
+      completed.forEach(function (id) { path[id] = true; });
+      (activities || []).forEach(function (id) { path[id] = true; });
+      registry.forEach(function (el) {
+        if (el.type !== 'bpmn:SequenceFlow') return;
+        var src = el.source && el.source.id;
+        var tgt = el.target && el.target.id;
+        if (src && tgt && path[src] && path[tgt]) mark(el.id, 'highlight-completed');
+      });
+    }
+    (activities || []).forEach(function (id) { mark(id, 'highlight'); });
+  }).catch(function (err) { console.error(err); });
+})();
+</m-script>
+                ]]></text>
+            </render-mode>
+        </widgets></section>
+    </widgets>
+</screen>

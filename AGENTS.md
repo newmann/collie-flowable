@@ -19,6 +19,7 @@ Depends on (from `component.xml`):
 - 范围与融合约定：`doc/REQUIREMENTS.md`（改产品口径先改本文）
 - 选型与实现：`doc/TECHNICAL.md`（改实现只动本文；服务名、实体、嵌屏、§12 默认值写死处）
 - 第一期交付：`doc/PHASE1.md`（StatusItem id、鉴权、demo 组件名写死处）
+- 第二期交付：`doc/PHASE2.md`（选人 token、加签、驳回指定节点、Call Activity、消息/信号）
 - Entities: `entity/WorkflowEntities.xml` — 包名 `wf.flowable`
 - Services: `service/wf/flowable/WorkflowServices.xml`、`DesignerServices.xml`
 - Screens: `screen/App.xml` — `/qapps/collie-flowable/`

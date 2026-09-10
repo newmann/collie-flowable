@@ -26,7 +26,13 @@
       ]
     },
     {
-      "name": "Field",
+      "name": "CallActivity",
+      "isAbstract": true,
+      "extends": ["bpmn:CallActivity"],
+      "properties": [
+        { "name": "inheritBusinessKey", "isAttr": true, "type": "Boolean" }
+      ]
+    },
       "superClass": ["Element"],
       "meta": { "allowedIn": ["bpmn:ServiceTask", "bpmn:UserTask"] },
       "properties": [

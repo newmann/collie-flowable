@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<screen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/xml-screen-3.xsd"
+        default-menu-title="Completed" require-authentication="true">
+
+    <actions>
+        <service-call name="wf.flowable.WorkflowServices.list#CompletedTasks" out-map="completedOut"/>
+        <set field="completedTaskList" from="completedOut.taskList"/>
+        <script>wf.flowable.WorkflowSupport.filterSortPaginate(ec, "completedTaskList",
+                ["name", "processInstanceId", "businessKey", "endTime"])</script>
+    </actions>
+    <widgets>
+        <form-list name="DoneList" list="completedTaskList" skip-form="true"
+                header-dialog="true" select-columns="true" saved-finds="true"
+                show-csv-button="true" show-xlsx-button="true" show-page-size="true">
+            <field name="name">
+                <header-field title="Task" show-order-by="case-insensitive">
+                    <text-find size="30"/>
+                </header-field>
+                <default-field title="Task"><display/></default-field>
+            </field>
+            <field name="processInstanceId">
+                <header-field title="Instance" show-order-by="true">
+                    <text-find size="20"/>
+                </header-field>
+                <default-field title="Instance">
+                    <link url="//collie-flowable/InstanceDetail" text="${processInstanceId}" link-type="anchor">
+                        <parameter name="processInstanceId"/>
+                        <parameter name="businessKey"/>
+                    </link>
+                </default-field>
+            </field>
+            <field name="businessKey">
+                <header-field title="Business Key" show-order-by="case-insensitive">
+                    <text-find size="20"/>
+                </header-field>
+                <default-field title="Business Key"><display/></default-field>
+            </field>
+            <field name="endTime">
+                <header-field title="Ended" show-order-by="true">
+                    <date-period/>
+                </header-field>
+                <default-field title="Ended"><display/></default-field>
+            </field>
+        </form-list>
+    </widgets>
+</screen>

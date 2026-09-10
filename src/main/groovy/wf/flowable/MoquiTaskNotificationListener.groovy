@@ -30,27 +30,32 @@ class MoquiTaskNotificationListener implements FlowableEventListener {
         ExecutionContext ec = Moqui.getExecutionContext()
         if (ec == null) return
         try {
+            ProcessEngine pe = (ProcessEngine) ec.getTool("Flowable", ProcessEngine.class)
+            def fresh = pe.taskService.createTaskQuery().taskId(task.id).singleResult()
+            String assignee = fresh?.assignee ?: task.assignee
+            if (MoquiAssignmentListener.isToken(assignee)) assignee = null
             String businessKey = resolveBusinessKey(ec, task.processInstanceId)
             Map<String, Object> payload = [taskId: task.id, taskName: task.name,
                     processInstanceId: task.processInstanceId, businessKey: businessKey] as Map<String, Object>
-            String assignee = task.assignee
             if (assignee) {
-                sendOne(ec, task, payload, assignee, null)
+                sendOne(ec, task, payload, assignee, null, businessKey)
                 return
             }
             Set<String> users = new LinkedHashSet<>()
             Set<String> groups = new LinkedHashSet<>()
-            def links = task.identityLinks
+            def links = pe.taskService.getIdentityLinksForTask(task.id)
             if (links != null) {
                 for (def link : links) {
                     if (link.type != IdentityLinkType.CANDIDATE) continue
-                    if (link.userId) users.add(link.userId as String)
+                    if (link.userId && !MoquiAssignmentListener.isToken(link.userId as String)) {
+                        users.add(link.userId as String)
+                    }
                     if (link.groupId) groups.add(link.groupId as String)
                 }
             }
             if (!users && !groups) groups.add("ADMIN")
-            for (String userId : users) sendOne(ec, task, payload, userId, null)
-            for (String groupId : groups) sendOne(ec, task, payload, null, groupId)
+            for (String userId : users) sendOne(ec, task, payload, userId, null, businessKey)
+            for (String groupId : groups) sendOne(ec, task, payload, null, groupId, businessKey)
         } catch (Throwable t) {
             logger.warn("Failed to send WorkflowTask notification for task ${task.id}: ${t.message}")
         }
@@ -68,12 +73,16 @@ class MoquiTaskNotificationListener implements FlowableEventListener {
     }
 
     protected static void sendOne(ExecutionContext ec, TaskEntity task, Map<String, Object> payload,
-                                 String userId, String groupId) {
+                                 String userId, String groupId, String businessKey) {
         NotificationMessage nm = ec.makeNotificationMessage()
         nm.topic("WorkflowTask")
         nm.type(NotificationMessage.NotificationType.info)
         nm.title("Workflow task: ${task.name ?: task.id}")
-        nm.link("/qapps/collie-flowable/TaskList?taskId=${task.id}")
+        StringBuilder link = new StringBuilder("/qapps/collie-flowable/InstanceDetail?taskId=")
+        link.append(task.id ?: "")
+        if (task.processInstanceId) link.append("&processInstanceId=").append(task.processInstanceId)
+        if (businessKey) link.append("&businessKey=").append(businessKey)
+        nm.link(link.toString())
         nm.message(payload)
         if (userId) nm.userId(userId)
         if (groupId) nm.userGroupId(groupId)
